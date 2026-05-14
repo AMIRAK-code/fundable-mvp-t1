@@ -75,10 +75,13 @@ async function FounderProfileSection({ userId }: { userId: string }) {
 
 async function InvestorProfileSection({ userId }: { userId: string }) {
   const supabase = await createClient()
-  const [{ data: details }, { data: offers }] = await Promise.all([
-    supabase.from('investor_details').select('*').eq('investor_id', userId).maybeSingle() as Promise<{ data: InvestorDetail | null; error: unknown }>,
-    supabase.from('investment_offers').select('*').eq('investor_id', userId).order('created_at', { ascending: false }) as Promise<{ data: InvestmentOffer[] | null; error: unknown }>,
+  const [detailsRes, offersRes] = await Promise.all([
+    supabase.from('investor_details').select('*').eq('investor_id', userId).maybeSingle(),
+    supabase.from('investment_offers').select('*').eq('investor_id', userId).order('created_at', { ascending: false }),
   ])
 
-  return <InvestorProfile details={details} offers={offers ?? []} />
+  const details = (detailsRes.data ?? null) as InvestorDetail | null
+  const offers = (offersRes.data ?? []) as InvestmentOffer[]
+
+  return <InvestorProfile details={details} offers={offers} />
 }
