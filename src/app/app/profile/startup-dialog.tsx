@@ -38,9 +38,9 @@ export default function StartupDialog({ open, onOpenChange, startup }: Props) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
-      <div className="relative w-full sm:max-w-md bg-slate-900 border border-white/10 rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] z-10 max-h-[92dvh] overflow-y-auto">
+      <div className="relative w-full sm:max-w-md bg-slate-900 border border-white/10 rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] z-10 max-h-[100dvh] sm:max-h-[92dvh] overflow-y-auto overscroll-contain">
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-semibold text-lg">{startup ? 'Edit Startup' : 'Add Startup'}</h3>
           <button onClick={() => onOpenChange(false)} className="text-muted-foreground hover:text-foreground transition-colors">
