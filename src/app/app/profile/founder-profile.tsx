@@ -2,8 +2,8 @@
 
 import { useTransition, useState } from 'react'
 import Image from 'next/image'
-import { Plus, Trash2, Building2 } from 'lucide-react'
-import { deleteStartup } from '@/app/actions/profile'
+import { Plus, Trash2, Building2, Eye, EyeOff } from 'lucide-react'
+import { deleteStartup, toggleStartupPublished } from '@/app/actions/profile'
 import type { Startup } from '@/lib/supabase/types'
 import StartupDialog from './startup-dialog'
 
@@ -65,6 +65,7 @@ function StartupRow({
   onEdit: () => void
 }) {
   const [deleting, startDelete] = useTransition()
+  const [publishing, startPublish] = useTransition()
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
@@ -78,12 +79,33 @@ function StartupRow({
             sizes="512px"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          {/* Published badge */}
+          <div className="absolute top-2 right-2">
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+              startup.published
+                ? 'bg-[var(--brand-success)]/20 text-[var(--brand-success)]'
+                : 'bg-white/10 text-muted-foreground'
+            }`}>
+              {startup.published ? 'Live' : 'Draft'}
+            </span>
+          </div>
         </div>
       )}
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-semibold truncate">{startup.name}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-semibold truncate">{startup.name}</p>
+              {!startup.hero_image_url && (
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
+                  startup.published
+                    ? 'bg-[var(--brand-success)]/20 text-[var(--brand-success)]'
+                    : 'bg-white/10 text-muted-foreground'
+                }`}>
+                  {startup.published ? 'Live' : 'Draft'}
+                </span>
+              )}
+            </div>
             {startup.industry && (
               <p className="text-xs text-[var(--brand-primary)] mt-0.5">{startup.industry}</p>
             )}
@@ -95,6 +117,22 @@ function StartupRow({
               className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-white/10 transition-colors"
             >
               Edit
+            </button>
+            <button
+              disabled={publishing}
+              onClick={() => startPublish(() => { toggleStartupPublished(startup.id, !startup.published) })}
+              title={startup.published ? 'Unpublish' : 'Publish to feed'}
+              className={`px-2 py-1 rounded-lg border transition-colors disabled:opacity-50 ${
+                startup.published
+                  ? 'border-[var(--brand-success)]/30 text-[var(--brand-success)] hover:opacity-70'
+                  : 'border-white/10 text-muted-foreground hover:text-[var(--brand-success)] hover:border-[var(--brand-success)]/30'
+              }`}
+            >
+              {startup.published ? (
+                <Eye className="w-3.5 h-3.5" />
+              ) : (
+                <EyeOff className="w-3.5 h-3.5" />
+              )}
             </button>
             <button
               disabled={deleting}

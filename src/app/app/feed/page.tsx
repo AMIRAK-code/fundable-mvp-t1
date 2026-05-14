@@ -61,6 +61,7 @@ async function FoundersFeed({
     .from('startups')
     .select('*, profiles!inner(id, full_name, avatar_url)')
     .neq('founder_id', userId)
+    .eq('published', true)
     .order('created_at', { ascending: false })
 
   if (!startups?.length) {
@@ -106,6 +107,20 @@ async function InvestorsFeed({
     )
   }
 
+  // Fetch active offers for these investors
+  const investorIds = investors.map((i) => i.investor_id)
+  const { data: offers } = await supabase
+    .from('investment_offers')
+    .select('id, investor_id, title, amount, stage, sectors, status')
+    .in('investor_id', investorIds)
+    .eq('status', 'active')
+
+  const offersByInvestor: Record<string, typeof offers> = {}
+  for (const o of offers ?? []) {
+    if (!offersByInvestor[o.investor_id]) offersByInvestor[o.investor_id] = []
+    offersByInvestor[o.investor_id]!.push(o)
+  }
+
   return (
     <>
       {investors.map((inv) => (
@@ -113,6 +128,7 @@ async function InvestorsFeed({
           key={inv.id}
           investor={inv as Parameters<typeof InvestorCard>[0]['investor']}
           connection={connMap[(inv.profiles as { id: string }).id] ?? null}
+          offers={offersByInvestor[inv.investor_id] ?? []}
         />
       ))}
     </>

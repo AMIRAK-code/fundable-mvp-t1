@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import { User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import type { Profile, Startup, InvestorDetail } from '@/lib/supabase/types'
+import type { Profile, Startup, InvestorDetail, InvestmentOffer } from '@/lib/supabase/types'
 import FounderProfile from './founder-profile'
 import InvestorProfile from './investor-profile'
 import LogoutButton from './logout-button'
@@ -75,11 +75,10 @@ async function FounderProfileSection({ userId }: { userId: string }) {
 
 async function InvestorProfileSection({ userId }: { userId: string }) {
   const supabase = await createClient()
-  const { data: details } = (await supabase
-    .from('investor_details')
-    .select('*')
-    .eq('investor_id', userId)
-    .maybeSingle()) as { data: InvestorDetail | null; error: unknown }
+  const [{ data: details }, { data: offers }] = await Promise.all([
+    supabase.from('investor_details').select('*').eq('investor_id', userId).maybeSingle() as Promise<{ data: InvestorDetail | null; error: unknown }>,
+    supabase.from('investment_offers').select('*').eq('investor_id', userId).order('created_at', { ascending: false }) as Promise<{ data: InvestmentOffer[] | null; error: unknown }>,
+  ])
 
-  return <InvestorProfile details={details} />
+  return <InvestorProfile details={details} offers={offers ?? []} />
 }
