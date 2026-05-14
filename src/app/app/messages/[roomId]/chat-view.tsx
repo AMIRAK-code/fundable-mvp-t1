@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { ArrowLeft, Send, User, ImageIcon, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { notifyNewMessage } from '@/app/actions/push'
 
 interface Msg {
   id: string
@@ -90,6 +91,7 @@ export default function ChatView({ roomId, currentUserId, otherUser, initialMess
       message_type: 'text',
       media_url: null,
     })
+    notifyNewMessage(otherUser.id, text.slice(0, 100))
     setSending(false)
   }
 
@@ -109,6 +111,7 @@ export default function ChatView({ roomId, currentUserId, otherUser, initialMess
     })
     setImagePreview(null)
     setUploading(false)
+    notifyNewMessage(otherUser.id, '📷 Image')
   }
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
