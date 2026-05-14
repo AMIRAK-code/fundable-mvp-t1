@@ -34,7 +34,7 @@ export async function signup(
     password,
     options: {
       data: { role },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback?next=/app/onboarding`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback?next=/onboarding`,
     },
   })
 
@@ -43,7 +43,7 @@ export async function signup(
   // If session is null, email confirmation is required
   if (!data.session) return { error: null, emailSent: true }
 
-  redirect('/app/onboarding')
+  redirect('/onboarding')
 }
 
 export async function logout() {
