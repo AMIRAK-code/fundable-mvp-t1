@@ -33,10 +33,17 @@ export async function upsertStartup(
     heroImageUrl = publicUrl
   }
 
+  const links: Record<string, string> = {}
+  for (const key of ['github', 'linkedin', 'reddit', 'instagram', 'website']) {
+    const val = (formData.get(`link_${key}`) as string | null)?.trim()
+    if (val) links[key] = val
+  }
+
   const payload = {
     name,
     pitch,
     industry,
+    links,
     ...(heroImageUrl ? { hero_image_url: heroImageUrl } : {}),
   }
 
@@ -151,7 +158,13 @@ export async function upsertInvestmentOffer(
   const sectorsRaw = (formData.get('sectors') as string) ?? ''
   const sectors = sectorsRaw.split(',').map((s) => s.trim()).filter(Boolean)
 
-  const payload = { title, description, amount: amount || null, stage: stage || null, sectors }
+  const links: Record<string, string> = {}
+  for (const key of ['github', 'linkedin', 'reddit', 'instagram', 'website']) {
+    const val = (formData.get(`link_${key}`) as string | null)?.trim()
+    if (val) links[key] = val
+  }
+
+  const payload = { title, description, amount: amount || null, stage: stage || null, sectors, links }
 
   if (id) {
     const { error } = await supabase
