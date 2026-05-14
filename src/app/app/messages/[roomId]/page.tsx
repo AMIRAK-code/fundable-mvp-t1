@@ -47,7 +47,7 @@ export default async function ChatRoomPage({
   // Load last 50 messages in chronological order
   const { data: raw } = await supabase
     .from('messages')
-    .select('id, sender_id, content, created_at')
+    .select('id, sender_id, content, message_type, media_url, created_at')
     .eq('chat_room_id', roomId)
     .order('created_at', { ascending: false })
     .limit(50)
