@@ -1,4 +1,12 @@
 export type Role = 'founder' | 'investor'
+
+export interface SocialLinks {
+  github?: string
+  linkedin?: string
+  reddit?: string
+  instagram?: string
+  website?: string
+}
 export type ConnectionStatus = 'pending' | 'accepted' | 'declined'
 
 export interface Profile {
@@ -18,6 +26,7 @@ export interface Startup {
   hero_image_url: string | null
   industry: string | null
   published: boolean
+  links: SocialLinks
   created_at: string
 }
 
@@ -30,6 +39,7 @@ export interface InvestmentOffer {
   stage: string | null
   sectors: string[] | null
   status: 'active' | 'closed'
+  links: SocialLinks
   created_at: string
 }
 

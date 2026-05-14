@@ -111,7 +111,7 @@ async function InvestorsFeed({
   const investorIds = investors.map((i) => i.investor_id)
   const { data: offers } = await supabase
     .from('investment_offers')
-    .select('id, investor_id, title, amount, stage, sectors, status')
+    .select('id, investor_id, title, amount, stage, sectors, status, links')
     .in('investor_id', investorIds)
     .eq('status', 'active')
 
