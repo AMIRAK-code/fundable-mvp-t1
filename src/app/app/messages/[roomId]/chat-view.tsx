@@ -122,9 +122,9 @@ export default function ChatView({ roomId, currentUserId, otherUser, initialMess
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-65px)] bg-background">
+    <div className="flex flex-col h-[calc(100dvh-64px-env(safe-area-inset-bottom))] bg-background">
       {/* Header */}
-      <header className="flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-background/90 backdrop-blur-md flex-shrink-0">
+      <header className="flex items-center gap-3 px-3 sm:px-4 py-2.5 pt-[calc(env(safe-area-inset-top)+0.625rem)] border-b border-white/10 bg-background/95 backdrop-blur-md flex-shrink-0">
         <button onClick={() => router.back()} className="text-muted-foreground hover:text-foreground transition-colors p-1">
           <ArrowLeft className="w-5 h-5" />
         </button>

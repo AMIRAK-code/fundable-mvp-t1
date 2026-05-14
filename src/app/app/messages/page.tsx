@@ -81,8 +81,8 @@ export default async function MessagesPage() {
   })
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-6 pb-8 space-y-3">
-      <h2 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-4">
+    <div className="max-w-lg mx-auto px-3 sm:px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 space-y-3">
+      <h2 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-2">
         Messages
       </h2>
 

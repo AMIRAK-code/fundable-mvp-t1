@@ -126,11 +126,43 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground;
+    overscroll-behavior-y: none;
   }
   html {
     @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
+  /* Prevent iOS Safari from zooming in when a form field is focused (requires ≥16px) */
+  @media (max-width: 640px) {
+    input:not([type='checkbox']):not([type='radio']),
+    textarea,
+    select {
+      font-size: 16px;
+    }
+  }
+  /* Buttons / links: keep tap targets comfortable */
+  button, a {
+    touch-action: manipulation;
+  }
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility h-safe-screen {
+  height: 100dvh;
+}
+
+@utility min-h-safe-screen {
+  min-height: 100dvh;
 }

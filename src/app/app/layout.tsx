@@ -21,9 +21,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!profile?.full_name) redirect('/onboarding')
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-safe-screen bg-background">
       <PushInit />
-      <main className="flex-1 pb-20">{children}</main>
+      <main className="flex-1 pb-[calc(64px+env(safe-area-inset-bottom)+8px)]">
+        {children}
+      </main>
       <BottomNav />
     </div>
   )
