@@ -17,6 +17,19 @@ export interface Startup {
   pitch: string
   hero_image_url: string | null
   industry: string | null
+  published: boolean
+  created_at: string
+}
+
+export interface InvestmentOffer {
+  id: string
+  investor_id: string
+  title: string
+  description: string
+  amount: string | null
+  stage: string | null
+  sectors: string[] | null
+  status: 'active' | 'closed'
   created_at: string
 }
 
@@ -49,6 +62,8 @@ export interface Message {
   chat_room_id: string
   sender_id: string
   content: string
+  message_type: 'text' | 'image'
+  media_url: string | null
   created_at: string
 }
 
@@ -80,6 +95,7 @@ export type Database = {
       connections: { Row: Connection; Insert: Omit<Connection, 'id' | 'created_at' | 'status'>; Update: Partial<Pick<Connection, 'status'>> }
       chat_rooms: { Row: ChatRoom; Insert: Omit<ChatRoom, 'id' | 'created_at'>; Update: never }
       messages: { Row: Message; Insert: Omit<Message, 'id' | 'created_at'>; Update: never }
+      investment_offers: { Row: InvestmentOffer; Insert: Omit<InvestmentOffer, 'id' | 'created_at'>; Update: Partial<Omit<InvestmentOffer, 'id' | 'created_at'>> }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

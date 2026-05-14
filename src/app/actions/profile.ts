@@ -58,6 +58,28 @@ export async function upsertStartup(
   return { error: null, success: true }
 }
 
+export async function toggleStartupPublished(
+  startupId: string,
+  published: boolean
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('startups')
+    .update({ published })
+    .eq('id', startupId)
+    .eq('founder_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/app/profile')
+  revalidatePath('/app/feed')
+  return { error: null }
+}
+
 export async function deleteStartup(startupId: string): Promise<{ error: string | null }> {
   const supabase = await createClient()
   const {
@@ -109,4 +131,84 @@ export async function upsertInvestorDetails(
   if (error) return { error: error.message, success: false }
   revalidatePath('/app/profile')
   return { error: null, success: true }
+}
+
+export async function upsertInvestmentOffer(
+  _prevState: { error: string | null; success: boolean },
+  formData: FormData
+): Promise<{ error: string | null; success: boolean }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated', success: false }
+
+  const id = formData.get('id') as string | null
+  const title = (formData.get('title') as string).trim()
+  const description = (formData.get('description') as string).trim()
+  const amount = (formData.get('amount') as string).trim()
+  const stage = (formData.get('stage') as string).trim()
+  const sectorsRaw = (formData.get('sectors') as string) ?? ''
+  const sectors = sectorsRaw.split(',').map((s) => s.trim()).filter(Boolean)
+
+  const payload = { title, description, amount: amount || null, stage: stage || null, sectors }
+
+  if (id) {
+    const { error } = await supabase
+      .from('investment_offers')
+      .update(payload)
+      .eq('id', id)
+      .eq('investor_id', user.id)
+    if (error) return { error: error.message, success: false }
+  } else {
+    const { error } = await supabase
+      .from('investment_offers')
+      .insert({ investor_id: user.id, status: 'active', ...payload })
+    if (error) return { error: error.message, success: false }
+  }
+
+  revalidatePath('/app/profile')
+  revalidatePath('/app/feed')
+  return { error: null, success: true }
+}
+
+export async function deleteInvestmentOffer(offerId: string): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('investment_offers')
+    .delete()
+    .eq('id', offerId)
+    .eq('investor_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/app/profile')
+  revalidatePath('/app/feed')
+  return { error: null }
+}
+
+export async function toggleOfferStatus(
+  offerId: string,
+  status: 'active' | 'closed'
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('investment_offers')
+    .update({ status })
+    .eq('id', offerId)
+    .eq('investor_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/app/profile')
+  revalidatePath('/app/feed')
+  return { error: null }
 }
