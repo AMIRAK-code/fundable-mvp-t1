@@ -45,7 +45,7 @@ export default async function RequestsPage() {
   const receiverMap = Object.fromEntries((receiverProfiles ?? []).map((p) => [p.id, p]))
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-6 pb-8 space-y-8">
+    <div className="max-w-lg mx-auto px-3 sm:px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 space-y-6">
       {/* ── Incoming ── */}
       <section className="space-y-3">
         <div className="flex items-center gap-2">
