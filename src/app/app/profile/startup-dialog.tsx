@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { X, Camera, Code2, Link2, Globe, ExternalLink } from 'lucide-react'
 import { upsertStartup } from '@/app/actions/profile'
 import type { Startup } from '@/lib/supabase/types'
+import { STARTUP_STATUS_LABELS } from '@/lib/supabase/types'
 
 interface Props {
   open: boolean
@@ -84,6 +85,17 @@ export default function StartupDialog({ open, onOpenChange, startup }: Props) {
             <label className="text-sm text-muted-foreground">Industry</label>
             <input name="industry" defaultValue={startup?.industry ?? ''} placeholder="B2B SaaS, FinTech, HealthTech…"
               className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm text-muted-foreground">Stage</label>
+            <select name="status" defaultValue={startup?.status ?? ''}
+              className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]">
+              <option value="">Not specified</option>
+              {Object.entries(STARTUP_STATUS_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
           </div>
 
           {/* Social links */}

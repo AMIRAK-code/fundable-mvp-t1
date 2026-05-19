@@ -4,7 +4,8 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Building2, Code2, Link2, Globe, Camera, ExternalLink, ChevronDown } from 'lucide-react'
 import ConnectButton from './connect-button'
-import type { ConnectionStatus, SocialLinks } from '@/lib/supabase/types'
+import type { ConnectionStatus, SocialLinks, StartupStatus } from '@/lib/supabase/types'
+import { STARTUP_STATUS_LABELS, STARTUP_STATUS_COLORS } from '@/lib/supabase/types'
 
 interface Startup {
   id: string
@@ -13,6 +14,7 @@ interface Startup {
   pitch: string
   hero_image_url: string | null
   industry: string | null
+  status: StartupStatus | null
   links: SocialLinks
   profiles: { id: string; full_name: string | null; avatar_url: string | null }
 }
@@ -64,11 +66,18 @@ export default function FounderCard({ startup, connection }: Props) {
         </div>
 
         <div className="relative h-full min-h-56 flex flex-col justify-end p-5">
-          {startup.industry && (
-            <span className="self-start mb-2 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-sm text-[10px] font-semibold uppercase tracking-wider text-white/70">
-              {startup.industry}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+            {startup.industry && (
+              <span className="px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-sm text-[10px] font-semibold uppercase tracking-wider text-white/70">
+                {startup.industry}
+              </span>
+            )}
+            {startup.status && (
+              <span className={`px-2.5 py-0.5 rounded-full border backdrop-blur-sm text-[10px] font-semibold uppercase tracking-wider ${STARTUP_STATUS_COLORS[startup.status]}`}>
+                {STARTUP_STATUS_LABELS[startup.status]}
+              </span>
+            )}
+          </div>
           <h2 className="text-2xl font-bold text-white leading-tight">{startup.name}</h2>
           <p className="text-sm text-white/75 mt-1 line-clamp-1">{startup.pitch}</p>
 

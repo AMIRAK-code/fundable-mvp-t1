@@ -9,6 +9,59 @@ export interface SocialLinks {
 }
 export type ConnectionStatus = 'pending' | 'accepted' | 'declined'
 
+export type StartupStatus =
+  | 'idea'
+  | 'pre_seed'
+  | 'mvp'
+  | 'pre_launch'
+  | 'launched'
+  | 'scaling'
+  | 'profitable'
+
+export type InvestorStatus =
+  | 'looking'
+  | 'reviewing'
+  | 'invested'
+  | 'advisory'
+  | 'closed'
+
+export const STARTUP_STATUS_LABELS: Record<StartupStatus, string> = {
+  idea: 'Idea',
+  pre_seed: 'Pre-seed',
+  mvp: 'MVP',
+  pre_launch: 'Pre-launch',
+  launched: 'Launched',
+  scaling: 'Scaling',
+  profitable: 'Profitable',
+}
+
+export const INVESTOR_STATUS_LABELS: Record<InvestorStatus, string> = {
+  looking: 'Looking for deals',
+  reviewing: 'Reviewing pitches',
+  invested: 'Recently invested',
+  advisory: 'Advisory only',
+  closed: 'Closed for now',
+}
+
+// Tailwind class names per status — green = active, blue = in-progress, amber = passive, gray = dormant
+export const STARTUP_STATUS_COLORS: Record<StartupStatus, string> = {
+  idea: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  pre_seed: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  mvp: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  pre_launch: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  launched: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  scaling: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  profitable: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+}
+
+export const INVESTOR_STATUS_COLORS: Record<InvestorStatus, string> = {
+  looking: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  reviewing: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  invested: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  advisory: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  closed: 'bg-white/10 text-muted-foreground border-white/10',
+}
+
 export interface Profile {
   id: string
   role: Role
@@ -25,6 +78,7 @@ export interface Startup {
   pitch: string
   hero_image_url: string | null
   industry: string | null
+  status: StartupStatus | null
   published: boolean
   links: SocialLinks
   created_at: string
@@ -50,6 +104,7 @@ export interface InvestorDetail {
   check_size: string | null
   sectors: string[] | null
   thesis: string | null
+  status: InvestorStatus | null
   created_at: string
 }
 
