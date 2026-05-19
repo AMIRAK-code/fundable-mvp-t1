@@ -4,7 +4,8 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { User, Briefcase, Code2, Link2, Globe, Camera, ExternalLink, ChevronDown } from 'lucide-react'
 import ConnectButton from './connect-button'
-import type { ConnectionStatus, SocialLinks } from '@/lib/supabase/types'
+import type { ConnectionStatus, SocialLinks, InvestorStatus } from '@/lib/supabase/types'
+import { INVESTOR_STATUS_LABELS, INVESTOR_STATUS_COLORS } from '@/lib/supabase/types'
 
 interface Investor {
   id: string
@@ -13,6 +14,7 @@ interface Investor {
   check_size: string | null
   sectors: string[] | null
   thesis: string | null
+  status: InvestorStatus | null
   profiles: { id: string; full_name: string | null; avatar_url: string | null }
 }
 
@@ -71,6 +73,11 @@ export default function InvestorCard({ investor, connection, offers = [] }: Prop
             <p className="font-semibold text-foreground leading-tight">{investor.profiles.full_name}</p>
             {investor.firm_name && <p className="text-xs text-[var(--brand-primary)] font-medium mt-0.5">{investor.firm_name}</p>}
             {investor.check_size && <p className="text-xs text-muted-foreground mt-0.5">Check: {investor.check_size}</p>}
+            {investor.status && (
+              <span className={`inline-block mt-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold uppercase tracking-wide ${INVESTOR_STATUS_COLORS[investor.status]}`}>
+                {INVESTOR_STATUS_LABELS[investor.status]}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">

@@ -17,6 +17,7 @@ export async function upsertStartup(
   const name = (formData.get('name') as string).trim()
   const pitch = (formData.get('pitch') as string).trim()
   const industry = (formData.get('industry') as string).trim()
+  const status = ((formData.get('status') as string | null) ?? '').trim() || null
   const heroFile = formData.get('hero_image') as File | null
 
   let heroImageUrl: string | undefined
@@ -43,6 +44,7 @@ export async function upsertStartup(
     name,
     pitch,
     industry,
+    status,
     links,
     ...(heroImageUrl ? { hero_image_url: heroImageUrl } : {}),
   }
@@ -118,6 +120,7 @@ export async function upsertInvestorDetails(
   const firmName = (formData.get('firm_name') as string).trim()
   const checkSize = (formData.get('check_size') as string).trim()
   const thesis = (formData.get('thesis') as string).trim()
+  const status = ((formData.get('status') as string | null) ?? '').trim() || null
   const sectorsRaw = (formData.get('sectors') as string) ?? ''
   const sectors = sectorsRaw
     .split(',')
@@ -130,6 +133,7 @@ export async function upsertInvestorDetails(
       firm_name: firmName,
       check_size: checkSize,
       thesis,
+      status,
       sectors,
     },
     { onConflict: 'investor_id' }

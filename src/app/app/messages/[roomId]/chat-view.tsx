@@ -6,7 +6,13 @@ import Image from 'next/image'
 import { ArrowLeft, Send, User, ImageIcon, X, ChevronDown, Briefcase, Code2, Link2, Globe, Camera, ExternalLink } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { notifyNewMessage } from '@/app/actions/push'
-import type { SocialLinks, Role } from '@/lib/supabase/types'
+import type { SocialLinks, Role, StartupStatus, InvestorStatus } from '@/lib/supabase/types'
+import {
+  STARTUP_STATUS_LABELS,
+  STARTUP_STATUS_COLORS,
+  INVESTOR_STATUS_LABELS,
+  INVESTOR_STATUS_COLORS,
+} from '@/lib/supabase/types'
 
 interface Msg {
   id: string
@@ -25,6 +31,7 @@ interface FounderProfile {
     pitch: string
     hero_image_url: string | null
     industry: string | null
+    status: StartupStatus | null
     links: SocialLinks
   }
 }
@@ -37,6 +44,7 @@ interface InvestorProfile {
     check_size: string | null
     sectors: string[] | null
     thesis: string | null
+    status: InvestorStatus | null
   }
   offers: Array<{
     id: string
@@ -103,11 +111,18 @@ function FounderProfilePanel({ startup }: { startup: FounderProfile['startup'] }
       )}
       <div>
         <p className="font-semibold text-foreground">{startup.name}</p>
-        {startup.industry && (
-          <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-white/10 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {startup.industry}
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+          {startup.industry && (
+            <span className="px-2 py-0.5 rounded-full bg-white/10 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {startup.industry}
+            </span>
+          )}
+          {startup.status && (
+            <span className={`px-2 py-0.5 rounded-full border text-[10px] font-semibold uppercase tracking-wider ${STARTUP_STATUS_COLORS[startup.status]}`}>
+              {STARTUP_STATUS_LABELS[startup.status]}
+            </span>
+          )}
+        </div>
       </div>
       <p className="text-sm text-muted-foreground leading-relaxed">{startup.pitch}</p>
       {hasLinks && (
@@ -132,6 +147,11 @@ function FounderProfilePanel({ startup }: { startup: FounderProfile['startup'] }
 function InvestorProfilePanel({ detail, offers }: { detail: InvestorProfile['detail']; offers: InvestorProfile['offers'] }) {
   return (
     <>
+      {detail.status && (
+        <span className={`inline-block px-2 py-0.5 rounded-full border text-[10px] font-semibold uppercase tracking-wider ${INVESTOR_STATUS_COLORS[detail.status]}`}>
+          {INVESTOR_STATUS_LABELS[detail.status]}
+        </span>
+      )}
       {detail.check_size && (
         <p className="text-xs text-muted-foreground">Check size: <span className="text-foreground font-medium">{detail.check_size}</span></p>
       )}

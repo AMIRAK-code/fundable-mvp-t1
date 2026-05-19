@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react'
 import { X } from 'lucide-react'
 import { upsertInvestorDetails } from '@/app/actions/profile'
 import type { InvestorDetail } from '@/lib/supabase/types'
+import { INVESTOR_STATUS_LABELS } from '@/lib/supabase/types'
 
 const INIT = { error: null as string | null, success: false }
 
@@ -47,6 +48,20 @@ export default function InvestorForm({ details }: { details: InvestorDetail | nu
           placeholder="$250K – $1M"
           className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
         />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-sm text-muted-foreground">Current status</label>
+        <select
+          name="status"
+          defaultValue={details?.status ?? ''}
+          className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+        >
+          <option value="">Not specified</option>
+          {Object.entries(INVESTOR_STATUS_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
       </div>
 
       <div className="space-y-1.5">

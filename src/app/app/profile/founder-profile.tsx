@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Plus, Trash2, Building2, Eye, EyeOff } from 'lucide-react'
 import { deleteStartup, toggleStartupPublished } from '@/app/actions/profile'
 import type { Startup } from '@/lib/supabase/types'
+import { STARTUP_STATUS_LABELS, STARTUP_STATUS_COLORS } from '@/lib/supabase/types'
 import StartupDialog from './startup-dialog'
 
 export default function FounderProfile({ startups }: { startups: Startup[] }) {
@@ -107,6 +108,11 @@ function StartupRow({
           </div>
           {startup.industry && (
             <p className="text-xs text-[var(--brand-primary)] mt-0.5">{startup.industry}</p>
+          )}
+          {startup.status && (
+            <span className={`inline-block mt-1.5 px-2 py-0.5 rounded-full border text-[10px] font-semibold uppercase tracking-wide ${STARTUP_STATUS_COLORS[startup.status]}`}>
+              {STARTUP_STATUS_LABELS[startup.status]}
+            </span>
           )}
           <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{startup.pitch}</p>
         </div>

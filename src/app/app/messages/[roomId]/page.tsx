@@ -51,7 +51,7 @@ export default async function ChatRoomPage({
   if (otherUser?.role === 'founder') {
     const { data: startup } = await supabase
       .from('startups')
-      .select('id, name, pitch, hero_image_url, industry, links')
+      .select('id, name, pitch, hero_image_url, industry, status, links')
       .eq('founder_id', otherId)
       .eq('published', true)
       .limit(1)
@@ -62,7 +62,7 @@ export default async function ChatRoomPage({
     const [{ data: detail }, { data: offers }] = await Promise.all([
       supabase
         .from('investor_details')
-        .select('id, firm_name, check_size, sectors, thesis')
+        .select('id, firm_name, check_size, sectors, thesis, status')
         .eq('investor_id', otherId)
         .maybeSingle(),
       supabase
