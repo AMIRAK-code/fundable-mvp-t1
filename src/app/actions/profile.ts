@@ -3,6 +3,13 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 
+/** Safely read a string field: null if absent/not a string, otherwise trimmed + capped. */
+function str(formData: FormData, key: string, max: number): string | null {
+  const v = formData.get(key)
+  if (typeof v !== 'string') return null
+  return v.trim().slice(0, max)
+}
+
 export async function upsertStartup(
   _prevState: { error: string | null; success: boolean },
   formData: FormData
@@ -13,15 +20,17 @@ export async function upsertStartup(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated', success: false }
 
-  const id = formData.get('id') as string | null
-  const name = (formData.get('name') as string).trim()
-  const pitch = (formData.get('pitch') as string).trim()
-  const industry = (formData.get('industry') as string).trim()
-  const status = ((formData.get('status') as string | null) ?? '').trim() || null
-  const heroFile = formData.get('hero_image') as File | null
+  const id = str(formData, 'id', 64)
+  const name = str(formData, 'name', 80)
+  const pitch = str(formData, 'pitch', 200)
+  if (!name || !pitch) return { error: 'Missing required field', success: false }
+
+  const industry = str(formData, 'industry', 80) ?? ''
+  const status = str(formData, 'status', 40) || null
+  const heroFile = formData.get('hero_image')
 
   let heroImageUrl: string | undefined
-  if (heroFile && heroFile.size > 0) {
+  if (heroFile instanceof File && heroFile.size > 0) {
     const ext = heroFile.name.split('.').pop() ?? 'jpg'
     const path = `${user.id}/${Date.now()}.${ext}`
     const { error: uploadError } = await supabase.storage
@@ -36,7 +45,7 @@ export async function upsertStartup(
 
   const links: Record<string, string> = {}
   for (const key of ['github', 'linkedin', 'reddit', 'instagram', 'website']) {
-    const val = (formData.get(`link_${key}`) as string | null)?.trim()
+    const val = str(formData, `link_${key}`, 300)
     if (val) links[key] = val
   }
 
@@ -64,6 +73,7 @@ export async function upsertStartup(
   }
 
   revalidatePath('/app/profile')
+  revalidatePath('/app/feed')
   return { error: null, success: true }
 }
 
@@ -104,6 +114,7 @@ export async function deleteStartup(startupId: string): Promise<{ error: string 
 
   if (error) return { error: error.message }
   revalidatePath('/app/profile')
+  revalidatePath('/app/feed')
   return { error: null }
 }
 
@@ -117,11 +128,14 @@ export async function upsertInvestorDetails(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated', success: false }
 
-  const firmName = (formData.get('firm_name') as string).trim()
-  const checkSize = (formData.get('check_size') as string).trim()
-  const thesis = (formData.get('thesis') as string).trim()
-  const status = ((formData.get('status') as string | null) ?? '').trim() || null
-  const sectorsRaw = (formData.get('sectors') as string) ?? ''
+  const firmName = str(formData, 'firm_name', 80)
+  const checkSize = str(formData, 'check_size', 80)
+  const thesis = str(formData, 'thesis', 1000)
+  if (firmName === null || checkSize === null || thesis === null) {
+    return { error: 'Missing required field', success: false }
+  }
+  const status = str(formData, 'status', 40) || null
+  const sectorsRaw = str(formData, 'sectors', 500) ?? ''
   const sectors = sectorsRaw
     .split(',')
     .map((s) => s.trim())
@@ -141,6 +155,7 @@ export async function upsertInvestorDetails(
 
   if (error) return { error: error.message, success: false }
   revalidatePath('/app/profile')
+  revalidatePath('/app/feed')
   return { error: null, success: true }
 }
 
@@ -154,17 +169,19 @@ export async function upsertInvestmentOffer(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated', success: false }
 
-  const id = formData.get('id') as string | null
-  const title = (formData.get('title') as string).trim()
-  const description = (formData.get('description') as string).trim()
-  const amount = (formData.get('amount') as string).trim()
-  const stage = (formData.get('stage') as string).trim()
-  const sectorsRaw = (formData.get('sectors') as string) ?? ''
+  const id = str(formData, 'id', 64)
+  const title = str(formData, 'title', 80)
+  const description = str(formData, 'description', 1000)
+  if (!title || !description) return { error: 'Missing required field', success: false }
+
+  const amount = str(formData, 'amount', 80) ?? ''
+  const stage = str(formData, 'stage', 40) ?? ''
+  const sectorsRaw = str(formData, 'sectors', 500) ?? ''
   const sectors = sectorsRaw.split(',').map((s) => s.trim()).filter(Boolean)
 
   const links: Record<string, string> = {}
   for (const key of ['github', 'linkedin', 'reddit', 'instagram', 'website']) {
-    const val = (formData.get(`link_${key}`) as string | null)?.trim()
+    const val = str(formData, `link_${key}`, 300)
     if (val) links[key] = val
   }
 

@@ -25,7 +25,8 @@ export async function saveSubscription(
 
 export async function notifyNewMessage(
   recipientId: string,
-  preview: string
+  preview: string,
+  roomId: string
 ): Promise<void> {
   const supabase = await createClient()
   const {
@@ -43,6 +44,6 @@ export async function notifyNewMessage(
   await pushToUser(recipientId, {
     title: name,
     body: preview || '📷 Image',
-    url: '/app/messages',
+    url: `/app/messages/${roomId}`,
   })
 }

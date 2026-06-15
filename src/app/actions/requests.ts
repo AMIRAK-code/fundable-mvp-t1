@@ -43,8 +43,10 @@ export async function acceptConnection(connectionId: string): Promise<{ error: s
     })
   }
 
-  // Trigger auto-creates the chat_room
-  revalidatePath('/app/requests')
+  // Trigger auto-creates the chat_room.
+  // Deliberately NOT revalidating /app/requests here: the row optimistically
+  // morphs into an accepted state with a Message CTA client-side, and the page
+  // is dynamic so the next visit refetches fresh data anyway.
   revalidatePath('/app/messages')
   return { error: null }
 }

@@ -1,10 +1,12 @@
 'use client'
 
-import { useTransition, useState } from 'react'
-import { Plus, Trash2, Briefcase } from 'lucide-react'
+import { useOptimistic, useTransition, useState } from 'react'
+import { Plus, Briefcase } from 'lucide-react'
+import { toast } from 'sonner'
 import { deleteInvestmentOffer, toggleOfferStatus } from '@/app/actions/profile'
 import type { InvestmentOffer } from '@/lib/supabase/types'
 import OfferDialog from './offer-dialog'
+import ConfirmDeleteButton from './confirm-delete-button'
 
 export default function InvestorOffers({ offers }: { offers: InvestmentOffer[] }) {
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -19,23 +21,25 @@ export default function InvestorOffers({ offers }: { offers: InvestmentOffer[] }
         <h2 className="font-semibold text-foreground">My Offers</h2>
         <button
           onClick={openAdd}
-          className="flex items-center gap-1.5 text-sm font-semibold text-white bg-[var(--brand-primary)] px-3.5 py-2 rounded-lg hover:opacity-90 transition-opacity min-h-[40px] flex-shrink-0"
+          className="press flex items-center gap-1.5 text-sm font-semibold text-white bg-[var(--brand-primary)] px-3.5 py-2 rounded-lg hover:opacity-90 transition-opacity min-h-[40px] flex-shrink-0"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4" aria-hidden />
           Post
         </button>
       </div>
 
       {offers.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center">
+        <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center animate-in-up">
           <Briefcase className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">No offers posted yet.</p>
           <p className="text-xs text-muted-foreground mt-1">Post an offer to attract founders.</p>
         </div>
       ) : (
-        offers.map((o) => (
-          <OfferRow key={o.id} offer={o} onEdit={() => openEdit(o)} />
-        ))
+        <div className="space-y-4 stagger-children">
+          {offers.map((o) => (
+            <OfferRow key={o.id} offer={o} onEdit={() => openEdit(o)} />
+          ))}
+        </div>
       )}
 
       <OfferDialog open={dialogOpen} onOpenChange={setDialogOpen} offer={editTarget} />
@@ -45,19 +49,41 @@ export default function InvestorOffers({ offers }: { offers: InvestmentOffer[] }
 
 function OfferRow({ offer, onEdit }: { offer: InvestmentOffer; onEdit: () => void }) {
   const [deleting, startDelete] = useTransition()
-  const [toggling, startToggle] = useTransition()
+  const [, startToggle] = useTransition()
+  const [status, setOptimisticStatus] = useOptimistic(
+    offer.status,
+    (_current, next: 'active' | 'closed') => next
+  )
+
+  function handleToggleStatus() {
+    const next = offer.status === 'active' ? 'closed' : 'active'
+    startToggle(async () => {
+      setOptimisticStatus(next)
+      const { error } = await toggleOfferStatus(offer.id, next)
+      if (error) toast.error(error)
+      else toast.success(next === 'active' ? 'Offer reopened' : 'Offer closed')
+    })
+  }
+
+  function handleDelete() {
+    startDelete(async () => {
+      const { error } = await deleteInvestmentOffer(offer.id)
+      if (error) toast.error(error)
+      else toast.success('Offer deleted')
+    })
+  }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3 animate-in-up">
       <div className="min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-semibold text-sm flex-1 min-w-0 truncate">{offer.title}</p>
           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
-            offer.status === 'active'
+            status === 'active'
               ? 'bg-[var(--brand-success)]/20 text-[var(--brand-success)]'
               : 'bg-white/10 text-muted-foreground'
           }`}>
-            {offer.status === 'active' ? 'Active' : 'Closed'}
+            {status === 'active' ? 'Active' : 'Closed'}
           </span>
         </div>
         <div className="flex gap-3 mt-0.5 flex-wrap">
@@ -78,25 +104,22 @@ function OfferRow({ offer, onEdit }: { offer: InvestmentOffer; onEdit: () => voi
       <div className="flex gap-2 pt-1 border-t border-white/5">
         <button
           onClick={onEdit}
-          className="flex-1 text-xs font-medium text-muted-foreground hover:text-foreground px-2 py-2 rounded-lg border border-white/10 transition-colors min-h-[36px]"
+          className="press flex-1 text-xs font-medium text-muted-foreground hover:text-foreground px-2 py-2 rounded-lg border border-white/10 transition-colors min-h-[36px]"
         >
           Edit
         </button>
         <button
-          disabled={toggling}
-          onClick={() => startToggle(() => { toggleOfferStatus(offer.id, offer.status === 'active' ? 'closed' : 'active') })}
-          className="flex-1 text-xs font-medium text-muted-foreground hover:text-foreground px-2 py-2 rounded-lg border border-white/10 transition-colors disabled:opacity-50 min-h-[36px]"
+          onClick={handleToggleStatus}
+          aria-label={status === 'active' ? `Close offer ${offer.title}` : `Reopen offer ${offer.title}`}
+          className="press flex-1 text-xs font-medium text-muted-foreground hover:text-foreground px-2 py-2 rounded-lg border border-white/10 transition-colors min-h-[36px]"
         >
-          {offer.status === 'active' ? 'Close' : 'Reopen'}
+          {status === 'active' ? 'Close' : 'Reopen'}
         </button>
-        <button
-          disabled={deleting}
-          onClick={() => startDelete(() => { deleteInvestmentOffer(offer.id) })}
-          aria-label="Delete offer"
-          className="flex items-center justify-center text-destructive hover:text-red-400 px-3 py-2 rounded-lg border border-destructive/20 disabled:opacity-50 transition-colors min-h-[36px] min-w-[40px]"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        <ConfirmDeleteButton
+          label={`Delete offer ${offer.title}`}
+          pending={deleting}
+          onConfirm={handleDelete}
+        />
       </div>
     </div>
   )

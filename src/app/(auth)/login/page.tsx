@@ -1,8 +1,19 @@
 'use client'
 
-import { useActionState } from 'react'
+import { Suspense, useActionState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { login } from '@/app/actions/auth'
+
+function CallbackErrorBanner() {
+  const searchParams = useSearchParams()
+  if (searchParams.get('error') !== 'auth_error') return null
+  return (
+    <p className="text-sm text-destructive rounded-lg bg-destructive/10 px-4 py-2.5 mb-4 animate-in-up">
+      Sign-in link expired or invalid — try again.
+    </p>
+  )
+}
 
 export default function LoginPage() {
   const [state, action, pending] = useActionState(login, { error: null })
@@ -10,6 +21,10 @@ export default function LoginPage() {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-8">
       <h2 className="text-xl font-semibold mb-6">Sign in to your account</h2>
+
+      <Suspense fallback={null}>
+        <CallbackErrorBanner />
+      </Suspense>
 
       <form action={action} className="space-y-4">
         <div className="space-y-1.5">

@@ -1,7 +1,8 @@
 'use client'
 
-import { useActionState, useState } from 'react'
-import { X } from 'lucide-react'
+import { useActionState, useEffect, useState } from 'react'
+import { X, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { upsertInvestorDetails } from '@/app/actions/profile'
 import type { InvestorDetail } from '@/lib/supabase/types'
 import { INVESTOR_STATUS_LABELS } from '@/lib/supabase/types'
@@ -14,6 +15,11 @@ export default function InvestorForm({ details }: { details: InvestorDetail | nu
   // Sectors chip input
   const [sectors, setSectors] = useState<string[]>(details?.sectors ?? [])
   const [sectorInput, setSectorInput] = useState('')
+
+  useEffect(() => {
+    if (state.success) toast.success('Profile saved')
+    else if (state.error) toast.error(state.error)
+  }, [state])
 
   function addSector() {
     const val = sectorInput.trim()
@@ -34,6 +40,7 @@ export default function InvestorForm({ details }: { details: InvestorDetail | nu
         <label className="text-sm text-muted-foreground">Firm name</label>
         <input
           name="firm_name"
+          maxLength={80}
           defaultValue={details?.firm_name ?? ''}
           placeholder="Sequoia Capital"
           className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
@@ -44,6 +51,7 @@ export default function InvestorForm({ details }: { details: InvestorDetail | nu
         <label className="text-sm text-muted-foreground">Typical check size</label>
         <input
           name="check_size"
+          maxLength={80}
           defaultValue={details?.check_size ?? ''}
           placeholder="$250K – $1M"
           className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
@@ -77,12 +85,13 @@ export default function InvestorForm({ details }: { details: InvestorDetail | nu
               }
             }}
             placeholder="Type sector, press Enter"
+            aria-label="Add a sector"
             className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
           />
           <button
             type="button"
             onClick={addSector}
-            className="px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="press px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Add
           </button>
@@ -92,15 +101,16 @@ export default function InvestorForm({ details }: { details: InvestorDetail | nu
             {sectors.map((s) => (
               <span
                 key={s}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--brand-success)]/10 text-[var(--brand-success)] text-xs font-semibold"
+                className="animate-pop flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--brand-success)]/10 text-[var(--brand-success)] text-xs font-semibold"
               >
                 {s}
                 <button
                   type="button"
                   onClick={() => removeSector(s)}
-                  className="hover:opacity-70"
+                  aria-label={`Remove ${s}`}
+                  className="press hover:opacity-70"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3 h-3" aria-hidden />
                 </button>
               </span>
             ))}
@@ -113,17 +123,13 @@ export default function InvestorForm({ details }: { details: InvestorDetail | nu
         <textarea
           name="thesis"
           rows={4}
+          maxLength={1000}
           defaultValue={details?.thesis ?? ''}
           placeholder="I invest in early-stage B2B SaaS companies solving…"
           className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] resize-none"
         />
       </div>
 
-      {state.success && (
-        <p className="text-sm text-[var(--brand-success)] rounded-lg bg-[var(--brand-success)]/10 px-4 py-2.5">
-          Profile saved.
-        </p>
-      )}
       {state.error && (
         <p className="text-sm text-destructive rounded-lg bg-destructive/10 px-4 py-2.5">
           {state.error}
@@ -133,9 +139,16 @@ export default function InvestorForm({ details }: { details: InvestorDetail | nu
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl bg-[var(--brand-primary)] py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+        className="press w-full rounded-xl bg-[var(--brand-primary)] py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
       >
-        {pending ? 'Saving…' : 'Save Details'}
+        {pending ? (
+          <span className="inline-flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
+            Saving…
+          </span>
+        ) : (
+          'Save Details'
+        )}
       </button>
     </form>
   )

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { Profile, Startup, InvestorDetail, InvestmentOffer } from '@/lib/supabase/types'
 import FounderProfile from './founder-profile'
 import InvestorProfile from './investor-profile'
+import EditProfile from './edit-profile'
 import LogoutButton from './logout-button'
 
 export default async function ProfilePage() {
@@ -23,7 +24,7 @@ export default async function ProfilePage() {
   return (
     <div className="max-w-lg mx-auto px-3 sm:px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 space-y-5">
       {/* Profile header */}
-      <div className="flex items-center gap-3 sm:gap-4">
+      <div className="flex items-center gap-3 sm:gap-4 animate-in-up">
         {profile.avatar_url ? (
           <Image
             src={profile.avatar_url}
@@ -46,6 +47,13 @@ export default async function ProfilePage() {
             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{profile.bio}</p>
           )}
         </div>
+        <EditProfile
+          profile={{
+            full_name: profile.full_name,
+            bio: profile.bio,
+            avatar_url: profile.avatar_url,
+          }}
+        />
       </div>
 
       <hr className="border-white/10" />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useRef, useState } from 'react'
+import { useActionState, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { Camera } from 'lucide-react'
 import { updateProfile } from '@/app/actions/auth'
@@ -9,12 +9,24 @@ import type { Role } from '@/lib/supabase/types'
 export default function OnboardingForm({ role }: { role: Role }) {
   const [state, action, pending] = useActionState(updateProfile, { error: null })
   const fileRef = useRef<HTMLInputElement>(null)
+  const previewRef = useRef<string | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (file) setPreview(URL.createObjectURL(file))
+    if (!file) return
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current)
+    const url = URL.createObjectURL(file)
+    previewRef.current = url
+    setPreview(url)
   }
+
+  useEffect(
+    () => () => {
+      if (previewRef.current) URL.revokeObjectURL(previewRef.current)
+    },
+    []
+  )
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-8">

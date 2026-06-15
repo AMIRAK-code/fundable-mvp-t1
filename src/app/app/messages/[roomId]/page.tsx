@@ -38,50 +38,62 @@ export default async function ChatRoomPage({
   const otherId =
     conn.sender_id === user!.id ? conn.receiver_id : conn.sender_id
 
-  // Fetch other participant's profile including role
-  const { data: otherUser } = await supabase
-    .from('profiles')
-    .select('id, full_name, avatar_url, role')
-    .eq('id', otherId)
-    .single()
-
-  // Fetch profile details based on role
-  let profileData: ProfileData = null
-
-  if (otherUser?.role === 'founder') {
-    const { data: startup } = await supabase
+  // Profile, both role-data branches, messages and the read receipt are all
+  // independent of each other — run the whole batch in parallel
+  const [
+    { data: otherUser },
+    { data: startup },
+    { data: investorDetail },
+    { data: offers },
+    { data: raw },
+  ] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url, role')
+      .eq('id', otherId)
+      .single(),
+    supabase
       .from('startups')
       .select('id, name, pitch, hero_image_url, industry, status, links')
       .eq('founder_id', otherId)
       .eq('published', true)
       .limit(1)
-      .maybeSingle()
+      .maybeSingle(),
+    supabase
+      .from('investor_details')
+      .select('id, firm_name, check_size, sectors, thesis, status')
+      .eq('investor_id', otherId)
+      .maybeSingle(),
+    supabase
+      .from('investment_offers')
+      .select('id, title, description, amount, stage, sectors, status, links')
+      .eq('investor_id', otherId)
+      .eq('status', 'active'),
+    supabase
+      .from('messages')
+      .select('id, sender_id, content, message_type, media_url, created_at')
+      .eq('chat_room_id', roomId)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    // Mark the room read for the current user (own row only)
+    supabase
+      .from('message_reads')
+      .upsert(
+        {
+          chat_room_id: roomId,
+          user_id: user!.id,
+          last_read_at: new Date().toISOString(),
+        },
+        { onConflict: 'chat_room_id,user_id' }
+      ),
+  ])
 
-    if (startup) profileData = { type: 'founder', startup }
-  } else if (otherUser?.role === 'investor') {
-    const [{ data: detail }, { data: offers }] = await Promise.all([
-      supabase
-        .from('investor_details')
-        .select('id, firm_name, check_size, sectors, thesis, status')
-        .eq('investor_id', otherId)
-        .maybeSingle(),
-      supabase
-        .from('investment_offers')
-        .select('id, title, description, amount, stage, sectors, status, links')
-        .eq('investor_id', otherId)
-        .eq('status', 'active'),
-    ])
-
-    if (detail) profileData = { type: 'investor', detail, offers: offers ?? [] }
+  let profileData: ProfileData = null
+  if (otherUser?.role === 'founder' && startup) {
+    profileData = { type: 'founder', startup }
+  } else if (otherUser?.role === 'investor' && investorDetail) {
+    profileData = { type: 'investor', detail: investorDetail, offers: offers ?? [] }
   }
-
-  // Load last 50 messages in chronological order
-  const { data: raw } = await supabase
-    .from('messages')
-    .select('id, sender_id, content, message_type, media_url, created_at')
-    .eq('chat_room_id', roomId)
-    .order('created_at', { ascending: false })
-    .limit(50)
 
   const initialMessages = (raw ?? []).reverse()
 
