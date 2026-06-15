@@ -7,17 +7,23 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY!
 )
 
+interface PushTarget {
+  endpoint: string
+  p256dh: string
+  auth: string
+}
+
 export async function pushToUser(
   userId: string,
   payload: { title: string; body: string; url: string }
 ) {
   const supabase = await createClient()
-  const { data: subs } = await supabase
-    .from('push_subscriptions')
-    .select('endpoint, p256dh, auth')
-    .eq('user_id', userId)
+  // Security-definer RPC — a direct select on push_subscriptions is blocked by
+  // RLS for other users' rows, so pushes to the recipient would never fire.
+  const { data } = await supabase.rpc('get_push_targets', { target: userId })
+  const subs = (data ?? []) as PushTarget[]
 
-  if (!subs?.length) return
+  if (!subs.length) return
 
   await Promise.allSettled(
     subs.map((sub) =>

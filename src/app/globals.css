@@ -166,3 +166,106 @@
 @utility min-h-safe-screen {
   min-height: 100dvh;
 }
+
+/* ── AAA polish utilities ───────────────────────────────── */
+
+/* Tactile press feedback for every interactive surface */
+@utility press {
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+@utility press-subtle {
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  &:active {
+    transform: scale(0.99);
+    opacity: 0.85;
+  }
+}
+
+/* Shimmering skeleton placeholder */
+@utility skeleton {
+  position: relative;
+  overflow: hidden;
+  background: oklch(0.16 0.008 264);
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 7%), transparent);
+    animation: shimmer 1.6s infinite;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Content entrance — used on feed cards, list rows, panels */
+@utility animate-in-up {
+  animation: fade-in-up 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) both;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Springy pop — used on badges, sent messages, status changes */
+@utility animate-pop {
+  animation: pop-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Horizontal chip rows: scroll without a visible scrollbar */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Stagger helper — pair with animate-in-up on list children */
+@utility stagger-children {
+  & > *:nth-child(1) { animation-delay: 0ms; }
+  & > *:nth-child(2) { animation-delay: 40ms; }
+  & > *:nth-child(3) { animation-delay: 80ms; }
+  & > *:nth-child(4) { animation-delay: 120ms; }
+  & > *:nth-child(5) { animation-delay: 160ms; }
+  & > *:nth-child(6) { animation-delay: 200ms; }
+  & > *:nth-child(7) { animation-delay: 240ms; }
+  & > *:nth-child(8) { animation-delay: 280ms; }
+}
+
+/* Accessibility: honor reduced-motion globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

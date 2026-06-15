@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 
 export async function login(
@@ -9,10 +10,13 @@ export async function login(
 ): Promise<{ error: string | null }> {
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
-  })
+  const email = formData.get('email')
+  const password = formData.get('password')
+  if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
+    return { error: 'Missing required field' }
+  }
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) return { error: error.message }
 
@@ -25,9 +29,18 @@ export async function signup(
 ): Promise<{ error: string | null; emailSent?: boolean }> {
   const supabase = await createClient()
 
-  const role = formData.get('role') as string
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+  const role = formData.get('role')
+  const email = formData.get('email')
+  const password = formData.get('password')
+  if (
+    typeof role !== 'string' ||
+    typeof email !== 'string' ||
+    typeof password !== 'string' ||
+    !email ||
+    !password
+  ) {
+    return { error: 'Missing required field' }
+  }
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -46,16 +59,17 @@ export async function signup(
   redirect('/onboarding')
 }
 
-export async function logout() {
+export async function logout(): Promise<{ error: string } | void> {
   const supabase = await createClient()
-  await supabase.auth.signOut()
+  const { error } = await supabase.auth.signOut()
+  if (error) return { error: error.message }
   redirect('/')
 }
 
 export async function updateProfile(
-  _prevState: { error: string | null },
+  _prevState: { error: string | null; success?: boolean },
   formData: FormData
-): Promise<{ error: string | null }> {
+): Promise<{ error: string | null; success?: boolean }> {
   const supabase = await createClient()
 
   const {
@@ -65,13 +79,17 @@ export async function updateProfile(
 
   if (!user || userError) return { error: 'Not authenticated' }
 
-  const fullName = (formData.get('full_name') as string).trim()
-  const bio = (formData.get('bio') as string).trim()
-  const avatarFile = formData.get('avatar') as File | null
+  const rawName = formData.get('full_name')
+  const rawBio = formData.get('bio')
+  if (typeof rawName !== 'string') return { error: 'Missing required field' }
+  const fullName = rawName.trim().slice(0, 80)
+  if (!fullName) return { error: 'Missing required field' }
+  const bio = typeof rawBio === 'string' ? rawBio.trim().slice(0, 1000) : ''
+  const avatarFile = formData.get('avatar')
 
   let avatarUrl: string | undefined
 
-  if (avatarFile && avatarFile.size > 0) {
+  if (avatarFile instanceof File && avatarFile.size > 0) {
     const ext = avatarFile.name.split('.').pop() ?? 'jpg'
     const path = `${user.id}/avatar.${ext}`
 
@@ -85,7 +103,8 @@ export async function updateProfile(
       data: { publicUrl },
     } = supabase.storage.from('avatars').getPublicUrl(path)
 
-    avatarUrl = publicUrl
+    // The storage path is stable, so bust CDN/browser caches per upload
+    avatarUrl = `${publicUrl}?v=${Date.now()}`
   }
 
   const payload: Record<string, string> = { full_name: fullName, bio }
@@ -97,6 +116,12 @@ export async function updateProfile(
     .eq('id', user.id)
 
   if (error) return { error: error.message }
+
+  revalidatePath('/app/profile')
+  revalidatePath('/app/feed')
+
+  // In-app edits (profile page dialog) stay put; onboarding redirects to the feed
+  if (formData.get('stay') === '1') return { error: null, success: true }
 
   redirect('/app/feed')
 }

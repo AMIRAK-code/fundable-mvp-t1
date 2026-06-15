@@ -1,12 +1,16 @@
 self.addEventListener('push', (event) => {
   if (!event.data) return
   const { title, body, url } = event.data.json()
+  const target = url ?? '/app/feed'
   event.waitUntil(
     self.registration.showNotification(title ?? 'Fundable', {
       body: body ?? '',
       icon: '/favicon.ico',
       badge: '/favicon.ico',
-      data: { url: url ?? '/app/feed' },
+      // One notification per conversation — new pushes replace the old one
+      tag: target,
+      renotify: true,
+      data: { url: target },
     })
   )
 })

@@ -4,24 +4,23 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Building2, Code2, Link2, Globe, Camera, ExternalLink, ChevronDown } from 'lucide-react'
 import ConnectButton from './connect-button'
-import type { ConnectionStatus, SocialLinks, StartupStatus } from '@/lib/supabase/types'
+import type { ConnectionStatus, Startup } from '@/lib/supabase/types'
 import { STARTUP_STATUS_LABELS, STARTUP_STATUS_COLORS } from '@/lib/supabase/types'
 
-interface Startup {
+// Joined profile shape returned by the feed query
+interface FeedProfile {
   id: string
-  founder_id: string
-  name: string
-  pitch: string
-  hero_image_url: string | null
-  industry: string | null
-  status: StartupStatus | null
-  links: SocialLinks
-  profiles: { id: string; full_name: string | null; avatar_url: string | null }
+  full_name: string | null
+  avatar_url: string | null
 }
 
+export type FeedStartup = Startup & { profiles: FeedProfile }
+
 interface Props {
-  startup: Startup
+  startup: FeedStartup
   connection: { status: ConnectionStatus } | null
+  /** True for the first card in the feed — preloads its hero image */
+  priority?: boolean
 }
 
 const LINK_ICONS = [
@@ -32,23 +31,38 @@ const LINK_ICONS = [
   { key: 'reddit',    label: 'Reddit',    Icon: ExternalLink },
 ]
 
-export default function FounderCard({ startup, connection }: Props) {
+export default function FounderCard({ startup, connection, priority = false }: Props) {
   const [expanded, setExpanded] = useState(false)
   const links = (startup.links ?? {}) as Record<string, string>
   const hasLinks = LINK_ICONS.some(({ key }) => links[key])
 
+  const toggle = () => setExpanded((v) => !v)
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      toggle()
+    }
+  }
+
   return (
-    <div className="rounded-2xl overflow-hidden border border-white/10 bg-slate-900">
+    <div className="rounded-2xl overflow-hidden border border-white/10 bg-slate-900 animate-in-up">
       {/* Main card — clickable to expand */}
       <div
-        className="relative min-h-56 cursor-pointer"
-        onClick={() => setExpanded((v) => !v)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        aria-label={`${startup.name} — ${expanded ? 'collapse' : 'expand'} details`}
+        onClick={toggle}
+        onKeyDown={onKeyDown}
+        className="relative min-h-56 cursor-pointer press-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brand-primary)]"
       >
         {startup.hero_image_url ? (
           <Image
             src={startup.hero_image_url}
             alt={startup.name}
             fill
+            priority={priority}
             className="object-cover"
             sizes="(max-width: 512px) 100vw, 512px"
           />
@@ -93,39 +107,41 @@ export default function FounderCard({ startup, connection }: Props) {
               <span className="text-xs text-white/70 font-medium">{startup.profiles.full_name}</span>
             </div>
             <div onClick={(e) => e.stopPropagation()}>
-              <ConnectButton receiverId={startup.profiles.id} status={connection?.status ?? null} />
+              <ConnectButton receiverId={startup.profiles.id} status={connection?.status ?? null} name={startup.profiles.full_name} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Expandable details panel */}
-      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expanded ? 'max-h-96' : 'max-h-0'}`}>
-        <div className="p-5 border-t border-white/10 space-y-4">
-          <p className="text-sm text-muted-foreground leading-relaxed">{startup.pitch}</p>
+      {/* Expandable details panel — grid-rows trick handles any content height */}
+      <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+        <div className="overflow-hidden min-h-0">
+          <div className="p-5 border-t border-white/10 space-y-4">
+            <p className="text-sm text-muted-foreground leading-relaxed">{startup.pitch}</p>
 
-          {hasLinks && (
-            <div className="space-y-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Links</p>
-              <div className="flex flex-wrap gap-2">
-                {LINK_ICONS.map(({ key, label, Icon }) =>
-                  links[key] ? (
-                    <a
-                      key={key}
-                      href={links[key]}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      {label}
-                    </a>
-                  ) : null
-                )}
+            {hasLinks && (
+              <div className="space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Links</p>
+                <div className="flex flex-wrap gap-2">
+                  {LINK_ICONS.map(({ key, label, Icon }) =>
+                    links[key] ? (
+                      <a
+                        key={key}
+                        href={links[key]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors press-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        {label}
+                      </a>
+                    ) : null
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -4,35 +4,23 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { User, Briefcase, Code2, Link2, Globe, Camera, ExternalLink, ChevronDown } from 'lucide-react'
 import ConnectButton from './connect-button'
-import type { ConnectionStatus, SocialLinks, InvestorStatus } from '@/lib/supabase/types'
+import type { ConnectionStatus, InvestorDetail, InvestmentOffer } from '@/lib/supabase/types'
 import { INVESTOR_STATUS_LABELS, INVESTOR_STATUS_COLORS } from '@/lib/supabase/types'
 
-interface Investor {
+// Joined profile shape returned by the feed query
+interface FeedProfile {
   id: string
-  investor_id: string
-  firm_name: string | null
-  check_size: string | null
-  sectors: string[] | null
-  thesis: string | null
-  status: InvestorStatus | null
-  profiles: { id: string; full_name: string | null; avatar_url: string | null }
+  full_name: string | null
+  avatar_url: string | null
 }
 
-interface Offer {
-  id: string
-  investor_id: string
-  title: string
-  amount: string | null
-  stage: string | null
-  sectors: string[] | null
-  status: string
-  links?: SocialLinks
-}
+export type FeedInvestor = InvestorDetail & { profiles: FeedProfile }
+export type FeedOffer = Pick<InvestmentOffer, 'id' | 'investor_id' | 'title' | 'amount' | 'stage' | 'sectors' | 'status' | 'links'>
 
 interface Props {
-  investor: Investor
+  investor: FeedInvestor
   connection: { status: ConnectionStatus } | null
-  offers?: Offer[]
+  offers?: FeedOffer[]
 }
 
 const LINK_ICONS = [
@@ -49,14 +37,32 @@ export default function InvestorCard({ investor, connection, offers = [] }: Prop
   // Gather links from all active offers (take first offer's links as primary)
   const offerLinks = (offers[0]?.links ?? {}) as Record<string, string>
   const hasLinks = LINK_ICONS.some(({ key }) => offerLinks[key])
-  const hasExpandable = investor.thesis || hasLinks || offers.length > 0
+  const hasExpandable = Boolean(investor.thesis || hasLinks || offers.length > 0)
+
+  const toggle = () => hasExpandable && setExpanded((v) => !v)
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      toggle()
+    }
+  }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md overflow-hidden">
+    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md overflow-hidden animate-in-up">
       {/* Header — always visible */}
       <div
-        className={`p-5 space-y-4 ${hasExpandable ? 'cursor-pointer' : ''}`}
-        onClick={() => hasExpandable && setExpanded((v) => !v)}
+        className={`p-5 space-y-4 ${hasExpandable ? 'cursor-pointer press-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brand-primary)]' : ''}`}
+        onClick={toggle}
+        {...(hasExpandable
+          ? {
+              role: 'button',
+              tabIndex: 0,
+              'aria-expanded': expanded,
+              'aria-label': `${investor.profiles.full_name ?? 'Investor'} — ${expanded ? 'collapse' : 'expand'} details`,
+              onKeyDown,
+            }
+          : {})}
       >
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0">
@@ -87,7 +93,7 @@ export default function InvestorCard({ investor, connection, offers = [] }: Prop
               </span>
             )}
             <div onClick={(e) => e.stopPropagation()}>
-              <ConnectButton receiverId={investor.profiles.id} status={connection?.status ?? null} />
+              <ConnectButton receiverId={investor.profiles.id} status={connection?.status ?? null} name={investor.profiles.full_name} />
             </div>
           </div>
         </div>
@@ -135,76 +141,78 @@ export default function InvestorCard({ investor, connection, offers = [] }: Prop
         )}
       </div>
 
-      {/* Expandable section */}
-      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expanded ? 'max-h-[600px]' : 'max-h-0'}`}>
-        <div className="px-5 pb-5 space-y-4 border-t border-white/10 pt-4">
-          {/* Full thesis */}
-          {investor.thesis && (
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Investment Thesis</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">{investor.thesis}</p>
-            </div>
-          )}
-
-          {/* All offers */}
-          {offers.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Briefcase className="w-3 h-3" /> All Offers
-              </p>
-              {offers.map((o) => {
-                const ol = (o.links ?? {}) as Record<string, string>
-                const offerHasLinks = LINK_ICONS.some(({ key }) => ol[key])
-                return (
-                  <div key={o.id} className="rounded-xl bg-white/5 border border-white/10 p-3 space-y-2">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <p className="text-sm font-medium text-foreground">{o.title}</p>
-                      {o.amount && <span className="text-xs text-[var(--brand-primary)] flex-shrink-0">{o.amount}</span>}
-                    </div>
-                    {(o.stage || (o.sectors && o.sectors.length > 0)) && (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {o.stage && <span className="text-[10px] text-muted-foreground">{o.stage}</span>}
-                        {o.sectors?.map((s) => (
-                          <span key={s} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--brand-success)]/10 text-[var(--brand-success)] font-semibold uppercase tracking-wide">{s}</span>
-                        ))}
-                      </div>
-                    )}
-                    {offerHasLinks && (
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {LINK_ICONS.map(({ key, label, Icon }) =>
-                          ol[key] ? (
-                            <a key={key} href={ol[key]} target="_blank" rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
-                              onClick={(e) => e.stopPropagation()}>
-                              <Icon className="w-3 h-3" />{label}
-                            </a>
-                          ) : null
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Investor links (from first offer if no per-offer links yet) */}
-          {hasLinks && offers.length === 0 && (
-            <div className="space-y-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Links</p>
-              <div className="flex flex-wrap gap-2">
-                {LINK_ICONS.map(({ key, label, Icon }) =>
-                  offerLinks[key] ? (
-                    <a key={key} href={offerLinks[key]} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
-                      onClick={(e) => e.stopPropagation()}>
-                      <Icon className="w-3.5 h-3.5" />{label}
-                    </a>
-                  ) : null
-                )}
+      {/* Expandable section — grid-rows trick handles any content height */}
+      <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+        <div className="overflow-hidden min-h-0">
+          <div className="px-5 pb-5 space-y-4 border-t border-white/10 pt-4">
+            {/* Full thesis */}
+            {investor.thesis && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Investment Thesis</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{investor.thesis}</p>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* All offers */}
+            {offers.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <Briefcase className="w-3 h-3" /> All Offers
+                </p>
+                {offers.map((o) => {
+                  const ol = (o.links ?? {}) as Record<string, string>
+                  const offerHasLinks = LINK_ICONS.some(({ key }) => ol[key])
+                  return (
+                    <div key={o.id} className="rounded-xl bg-white/5 border border-white/10 p-3 space-y-2">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <p className="text-sm font-medium text-foreground">{o.title}</p>
+                        {o.amount && <span className="text-xs text-[var(--brand-primary)] flex-shrink-0">{o.amount}</span>}
+                      </div>
+                      {(o.stage || (o.sectors && o.sectors.length > 0)) && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {o.stage && <span className="text-[10px] text-muted-foreground">{o.stage}</span>}
+                          {o.sectors?.map((s) => (
+                            <span key={s} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--brand-success)]/10 text-[var(--brand-success)] font-semibold uppercase tracking-wide">{s}</span>
+                          ))}
+                        </div>
+                      )}
+                      {offerHasLinks && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {LINK_ICONS.map(({ key, label, Icon }) =>
+                            ol[key] ? (
+                              <a key={key} href={ol[key]} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors press-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
+                                onClick={(e) => e.stopPropagation()}>
+                                <Icon className="w-3 h-3" />{label}
+                              </a>
+                            ) : null
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Investor links (from first offer if no per-offer links yet) */}
+            {hasLinks && offers.length === 0 && (
+              <div className="space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Links</p>
+                <div className="flex flex-wrap gap-2">
+                  {LINK_ICONS.map(({ key, label, Icon }) =>
+                    offerLinks[key] ? (
+                      <a key={key} href={offerLinks[key]} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors press-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
+                        onClick={(e) => e.stopPropagation()}>
+                        <Icon className="w-3.5 h-3.5" />{label}
+                      </a>
+                    ) : null
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

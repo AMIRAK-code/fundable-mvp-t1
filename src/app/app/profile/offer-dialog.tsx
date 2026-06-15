@@ -1,7 +1,8 @@
 'use client'
 
 import { useActionState, useEffect, useState } from 'react'
-import { X, Code2, Link2, Globe, Camera, ExternalLink } from 'lucide-react'
+import { X, Code2, Link2, Globe, Camera, ExternalLink, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { upsertInvestmentOffer } from '@/app/actions/profile'
 import type { InvestmentOffer } from '@/lib/supabase/types'
 
@@ -23,12 +24,67 @@ const SOCIAL_FIELDS = [
 ]
 
 export default function OfferDialog({ open, onOpenChange, offer }: Props) {
+  // Escape closes + body scroll lock while open
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onOpenChange(false)
+    }
+    document.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
+  }, [open, onOpenChange])
+
+  // Returning null on close unmounts OfferForm, so useActionState resets
+  // fresh on every open — no stale success state can re-close the dialog.
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-200"
+        onClick={() => onOpenChange(false)}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="offer-dialog-title"
+        className="relative w-full sm:max-w-md bg-slate-900 border border-white/10 rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] z-10 max-h-[100dvh] sm:max-h-[92dvh] overflow-y-auto overscroll-contain animate-in-up"
+      >
+        <div className="flex items-center justify-between mb-5">
+          <h3 id="offer-dialog-title" className="font-semibold text-lg">
+            {offer ? 'Edit Offer' : 'New Investment Offer'}
+          </h3>
+          <button
+            onClick={() => onOpenChange(false)}
+            aria-label="Close dialog"
+            className="press text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="w-5 h-5" aria-hidden />
+          </button>
+        </div>
+
+        <OfferForm offer={offer} onClose={() => onOpenChange(false)} />
+      </div>
+    </div>
+  )
+}
+
+function OfferForm({ offer, onClose }: { offer: InvestmentOffer | null; onClose: () => void }) {
   const [state, action, pending] = useActionState(upsertInvestmentOffer, INIT)
   const [sectors, setSectors] = useState<string[]>(offer?.sectors ?? [])
   const [sectorInput, setSectorInput] = useState('')
 
-  useEffect(() => { if (state.success) onOpenChange(false) }, [state.success, onOpenChange])
-  useEffect(() => { if (!open) { setSectors(offer?.sectors ?? []); setSectorInput('') } }, [open, offer])
+  useEffect(() => {
+    if (state.success) {
+      toast.success(offer ? 'Offer updated' : 'Offer posted')
+      onClose()
+    }
+  }, [state, offer, onClose])
 
   function addSector() {
     const val = sectorInput.trim()
@@ -36,103 +92,98 @@ export default function OfferDialog({ open, onOpenChange, offer }: Props) {
     setSectorInput('')
   }
 
-  if (!open) return null
-
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
-      <div className="relative w-full sm:max-w-md bg-slate-900 border border-white/10 rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] z-10 max-h-[100dvh] sm:max-h-[92dvh] overflow-y-auto overscroll-contain">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="font-semibold text-lg">{offer ? 'Edit Offer' : 'New Investment Offer'}</h3>
-          <button onClick={() => onOpenChange(false)} className="text-muted-foreground hover:text-foreground transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+    <form action={action} className="space-y-4">
+      {offer && <input type="hidden" name="id" value={offer.id} />}
+      <input type="hidden" name="sectors" value={sectors.join(',')} />
+
+      <div className="space-y-1.5">
+        <label className="text-sm text-muted-foreground">Offer title <span className="text-destructive">*</span></label>
+        <input name="title" required maxLength={80} defaultValue={offer?.title} placeholder="Seed investment in B2B SaaS"
+          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-sm text-muted-foreground">Description <span className="text-destructive">*</span></label>
+        <textarea name="description" required rows={3} maxLength={1000} defaultValue={offer?.description}
+          placeholder="What you're looking for, your value-add, terms…"
+          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] resize-none" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <label className="text-sm text-muted-foreground">Check size</label>
+          <input name="amount" maxLength={80} defaultValue={offer?.amount ?? ''} placeholder="$250K–$1M"
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
         </div>
+        <div className="space-y-1.5">
+          <label className="text-sm text-muted-foreground">Stage</label>
+          <select name="stage" defaultValue={offer?.stage ?? ''}
+            className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]">
+            <option value="">Any stage</option>
+            {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+      </div>
 
-        <form action={action} className="space-y-4">
-          {offer && <input type="hidden" name="id" value={offer.id} />}
-          <input type="hidden" name="sectors" value={sectors.join(',')} />
-
-          <div className="space-y-1.5">
-            <label className="text-sm text-muted-foreground">Offer title <span className="text-destructive">*</span></label>
-            <input name="title" required defaultValue={offer?.title} placeholder="Seed investment in B2B SaaS"
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm text-muted-foreground">Description <span className="text-destructive">*</span></label>
-            <textarea name="description" required rows={3} defaultValue={offer?.description}
-              placeholder="What you're looking for, your value-add, terms…"
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] resize-none" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-sm text-muted-foreground">Check size</label>
-              <input name="amount" defaultValue={offer?.amount ?? ''} placeholder="$250K–$1M"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm text-muted-foreground">Stage</label>
-              <select name="stage" defaultValue={offer?.stage ?? ''}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]">
-                <option value="">Any stage</option>
-                {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm text-muted-foreground">Sectors</label>
-            <div className="flex gap-2">
-              <input value={sectorInput} onChange={(e) => setSectorInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSector() } }}
-                placeholder="Type sector, press Enter"
-                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
-              <button type="button" onClick={addSector} className="px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 text-sm text-muted-foreground hover:text-foreground transition-colors">Add</button>
-            </div>
-            {sectors.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {sectors.map((s) => (
-                  <span key={s} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--brand-success)]/10 text-[var(--brand-success)] text-xs font-semibold">
-                    {s}
-                    <button type="button" onClick={() => setSectors((prev) => prev.filter((x) => x !== s))} className="hover:opacity-70">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Social links */}
-          <div className="space-y-2 pt-1">
-            <p className="text-sm text-muted-foreground font-medium">Your Links <span className="text-xs font-normal">(optional)</span></p>
-            {SOCIAL_FIELDS.map(({ key, label, Icon, placeholder }) => (
-              <div key={key} className="flex items-center gap-2">
-                <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 flex-shrink-0">
-                  <Icon className="w-3.5 h-3.5 text-muted-foreground" />
-                </div>
-                <input
-                  name={`link_${key}`}
-                  defaultValue={(offer?.links as Record<string, string>)?.[key] ?? ''}
-                  placeholder={placeholder}
-                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
-                />
-              </div>
+      <div className="space-y-1.5">
+        <label className="text-sm text-muted-foreground">Sectors</label>
+        <div className="flex gap-2">
+          <input value={sectorInput} onChange={(e) => setSectorInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSector() } }}
+            placeholder="Type sector, press Enter"
+            aria-label="Add a sector"
+            className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
+          <button type="button" onClick={addSector} className="press px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 text-sm text-muted-foreground hover:text-foreground transition-colors">Add</button>
+        </div>
+        {sectors.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {sectors.map((s) => (
+              <span key={s} className="animate-pop flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--brand-success)]/10 text-[var(--brand-success)] text-xs font-semibold">
+                {s}
+                <button type="button" onClick={() => setSectors((prev) => prev.filter((x) => x !== s))}
+                  aria-label={`Remove ${s}`} className="press hover:opacity-70">
+                  <X className="w-3 h-3" aria-hidden />
+                </button>
+              </span>
             ))}
           </div>
-
-          {state.error && (
-            <p className="text-sm text-destructive rounded-lg bg-destructive/10 px-4 py-2.5">{state.error}</p>
-          )}
-
-          <button type="submit" disabled={pending}
-            className="w-full rounded-xl bg-[var(--brand-primary)] py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
-            {pending ? 'Saving…' : offer ? 'Save Changes' : 'Post Offer'}
-          </button>
-        </form>
+        )}
       </div>
-    </div>
+
+      {/* Social links */}
+      <div className="space-y-2 pt-1">
+        <p className="text-sm text-muted-foreground font-medium">Your Links <span className="text-xs font-normal">(optional)</span></p>
+        {SOCIAL_FIELDS.map(({ key, label, Icon, placeholder }) => (
+          <div key={key} className="flex items-center gap-2">
+            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 flex-shrink-0">
+              <Icon className="w-3.5 h-3.5 text-muted-foreground" aria-hidden />
+            </div>
+            <input
+              name={`link_${key}`}
+              aria-label={`${label} link`}
+              maxLength={300}
+              defaultValue={(offer?.links as Record<string, string>)?.[key] ?? ''}
+              placeholder={placeholder}
+              className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+            />
+          </div>
+        ))}
+      </div>
+
+      {state.error && (
+        <p className="text-sm text-destructive rounded-lg bg-destructive/10 px-4 py-2.5">{state.error}</p>
+      )}
+
+      <button type="submit" disabled={pending}
+        className="press w-full rounded-xl bg-[var(--brand-primary)] py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
+        {pending ? (
+          <span className="inline-flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
+            Saving…
+          </span>
+        ) : offer ? 'Save Changes' : 'Post Offer'}
+      </button>
+    </form>
   )
 }

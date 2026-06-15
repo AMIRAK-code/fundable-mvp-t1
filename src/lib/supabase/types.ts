@@ -132,6 +132,31 @@ export interface Message {
   created_at: string
 }
 
+export interface MessageRead {
+  chat_room_id: string
+  user_id: string
+  last_read_at: string
+}
+
+// Row shape returned by the get_conversation_overview() RPC
+export interface ConversationOverview {
+  chat_room_id: string
+  last_content: string
+  last_type: 'text' | 'image'
+  last_sender_id: string
+  last_at: string
+  unread_count: number
+}
+
+export interface PushSubscriptionRow {
+  id: string
+  user_id: string
+  endpoint: string
+  p256dh: string
+  auth: string
+  created_at: string
+}
+
 // Joined shapes used in the UI
 export interface StartupWithFounder extends Startup {
   profiles: Profile
@@ -159,11 +184,27 @@ export type Database = {
       investor_details: { Row: InvestorDetail; Insert: Omit<InvestorDetail, 'id' | 'created_at'>; Update: Partial<Omit<InvestorDetail, 'id' | 'created_at'>> }
       connections: { Row: Connection; Insert: Omit<Connection, 'id' | 'created_at' | 'status'>; Update: Partial<Pick<Connection, 'status'>> }
       chat_rooms: { Row: ChatRoom; Insert: Omit<ChatRoom, 'id' | 'created_at'>; Update: never }
-      messages: { Row: Message; Insert: Omit<Message, 'id' | 'created_at'>; Update: never }
+      // id may be supplied client-side (crypto.randomUUID) for optimistic sends
+      messages: { Row: Message; Insert: Omit<Message, 'id' | 'created_at'> & { id?: string }; Update: never }
       investment_offers: { Row: InvestmentOffer; Insert: Omit<InvestmentOffer, 'id' | 'created_at'>; Update: Partial<Omit<InvestmentOffer, 'id' | 'created_at'>> }
+      message_reads: { Row: MessageRead; Insert: MessageRead | Omit<MessageRead, 'last_read_at'>; Update: Partial<Pick<MessageRead, 'last_read_at'>> }
+      push_subscriptions: { Row: PushSubscriptionRow; Insert: Omit<PushSubscriptionRow, 'id' | 'created_at'>; Update: Partial<Omit<PushSubscriptionRow, 'id' | 'created_at' | 'user_id'>> }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      get_unread_counts: {
+        Args: Record<string, never>
+        Returns: { chat_room_id: string; unread_count: number }[]
+      }
+      get_conversation_overview: {
+        Args: Record<string, never>
+        Returns: ConversationOverview[]
+      }
+      get_push_targets: {
+        Args: { target: string }
+        Returns: { endpoint: string; p256dh: string; auth: string }[]
+      }
+    }
     Enums: { role: Role; connection_status: ConnectionStatus }
   }
 }
