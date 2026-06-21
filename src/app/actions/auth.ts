@@ -1,7 +1,11 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024
+const ALLOWED_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'])
 
 export async function login(
   _prevState: { error: string | null },
@@ -53,9 +57,9 @@ export async function logout() {
 }
 
 export async function updateProfile(
-  _prevState: { error: string | null },
+  _prevState: { error: string | null; success?: boolean },
   formData: FormData
-): Promise<{ error: string | null }> {
+): Promise<{ error: string | null; success: boolean }> {
   const supabase = await createClient()
 
   const {
@@ -63,29 +67,39 @@ export async function updateProfile(
     error: userError,
   } = await supabase.auth.getUser()
 
-  if (!user || userError) return { error: 'Not authenticated' }
+  if (!user || userError) return { error: 'Not authenticated', success: false }
 
+  const next = (formData.get('next') as string | null)?.trim() || null
   const fullName = (formData.get('full_name') as string).trim()
   const bio = (formData.get('bio') as string).trim()
   const avatarFile = formData.get('avatar') as File | null
 
+  if (!fullName) return { error: 'Name is required.', success: false }
+  if (bio.length > 280) return { error: 'Bio must be 280 characters or fewer.', success: false }
+
   let avatarUrl: string | undefined
 
   if (avatarFile && avatarFile.size > 0) {
-    const ext = avatarFile.name.split('.').pop() ?? 'jpg'
-    const path = `${user.id}/avatar.${ext}`
+    if (avatarFile.size > MAX_IMAGE_BYTES) {
+      return { error: 'Image must be under 5MB.', success: false }
+    }
+    if (!ALLOWED_IMAGE_TYPES.has(avatarFile.type)) {
+      return { error: 'Image must be a PNG, JPEG, WebP, or GIF.', success: false }
+    }
+
+    const path = `${user.id}/avatar`
 
     const { error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(path, avatarFile, { upsert: true })
+      .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type })
 
-    if (uploadError) return { error: uploadError.message }
+    if (uploadError) return { error: uploadError.message, success: false }
 
     const {
       data: { publicUrl },
     } = supabase.storage.from('avatars').getPublicUrl(path)
 
-    avatarUrl = publicUrl
+    avatarUrl = `${publicUrl}?v=${Date.now()}`
   }
 
   const payload: Record<string, string> = { full_name: fullName, bio }
@@ -96,7 +110,11 @@ export async function updateProfile(
     .update(payload)
     .eq('id', user.id)
 
-  if (error) return { error: error.message }
+  if (error) return { error: error.message, success: false }
 
-  redirect('/app/feed')
+  revalidatePath('/app/profile')
+  revalidatePath('/app/feed')
+
+  if (next) redirect(next)
+  return { error: null, success: true }
 }
