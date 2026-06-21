@@ -1,19 +1,41 @@
 'use client'
 
-import { useActionState, useRef, useState } from 'react'
+import { useActionState, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { Camera } from 'lucide-react'
 import { updateProfile } from '@/app/actions/auth'
 import type { Role } from '@/lib/supabase/types'
 
+const MAX_IMAGE_MB = 5
+
 export default function OnboardingForm({ role }: { role: Role }) {
-  const [state, action, pending] = useActionState(updateProfile, { error: null })
+  const [state, action, pending] = useActionState(updateProfile, { error: null, success: false })
   const fileRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(null)
+  const [fileError, setFileError] = useState<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview)
+    }
+  }, [preview])
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setFileError(null)
     const file = e.target.files?.[0]
-    if (file) setPreview(URL.createObjectURL(file))
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setFileError('Please select an image file.')
+      e.target.value = ''
+      return
+    }
+    if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+      setFileError(`Image must be under ${MAX_IMAGE_MB}MB.`)
+      e.target.value = ''
+      return
+    }
+    if (preview) URL.revokeObjectURL(preview)
+    setPreview(URL.createObjectURL(file))
   }
 
   return (
@@ -25,15 +47,17 @@ export default function OnboardingForm({ role }: { role: Role }) {
       </p>
 
       <form action={action} className="space-y-5">
+        <input type="hidden" name="next" value="/app/feed" />
         {/* Avatar picker */}
         <div className="flex flex-col items-center gap-3">
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="relative w-20 h-20 rounded-full border-2 border-dashed border-white/20 hover:border-[var(--brand-primary)] transition-colors flex items-center justify-center overflow-hidden bg-white/5"
+            aria-label="Upload profile photo"
+            className="relative w-20 h-20 rounded-full border-2 border-dashed border-white/20 hover:border-[var(--brand-primary)] transition-colors flex items-center justify-center overflow-hidden bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
           >
             {preview ? (
-              <Image src={preview} alt="Avatar preview" fill className="object-cover" />
+              <Image src={preview} alt="" fill sizes="80px" className="object-cover" />
             ) : (
               <Camera className="w-6 h-6 text-muted-foreground" />
             )}
@@ -47,6 +71,9 @@ export default function OnboardingForm({ role }: { role: Role }) {
             className="hidden"
             onChange={handleFileChange}
           />
+          {fileError && (
+            <p role="alert" className="text-xs text-destructive">{fileError}</p>
+          )}
         </div>
 
         <div className="space-y-1.5">

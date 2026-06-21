@@ -24,18 +24,20 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
+              aria-label={label}
+              aria-current={active ? 'page' : undefined}
               className={[
-                'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl transition-colors min-h-[52px]',
+                'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl transition-colors min-h-[52px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]',
                 active
                   ? 'text-[var(--brand-primary)]'
                   : 'text-muted-foreground hover:text-foreground',
               ].join(' ')}
             >
               <span className="relative">
-                <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 1.8} />
+                <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 1.8} aria-hidden="true" />
                 {unread && <UnreadDot />}
               </span>
-              <span className="text-[10px] font-medium leading-none">{label}</span>
+              <span className="text-[11px] font-medium leading-none">{label}</span>
             </Link>
           )
         })}

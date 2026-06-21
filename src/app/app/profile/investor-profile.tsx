@@ -9,11 +9,11 @@ interface Props {
 
 export default function InvestorProfile({ details, offers }: Props) {
   return (
-    <div className="space-y-8">
-      <div className="space-y-4">
-        <h2 className="font-semibold text-foreground">Investment Details</h2>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+      <section className="space-y-4" aria-label="Investment details">
+        <h2 className="font-semibold text-base sm:text-lg">Investment Details</h2>
         <InvestorForm details={details} />
-      </div>
+      </section>
       <InvestorOffers offers={offers} />
     </div>
   )
