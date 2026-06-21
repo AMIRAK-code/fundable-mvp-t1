@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { safeRelativePath } from '@/lib/security/url'
 import { validateImageUpload } from '@/lib/security/upload'
@@ -190,6 +191,10 @@ export async function updateProfile(
     .eq('id', user.id)
 
   if (error) return { error: error.message }
+
+  // Name/avatar/bio appear in cached feed cards + chat panels — refresh them.
+  revalidateTag('startups', 'max')
+  revalidateTag('investors', 'max')
 
   redirect('/app/feed')
 }
