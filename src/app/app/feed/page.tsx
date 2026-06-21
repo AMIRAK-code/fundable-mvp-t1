@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import type { ConnectionStatus } from '@/lib/supabase/types'
+import { getPublishedStartups, getActiveInvestors } from '@/lib/data/feed'
 import FeedHeader from './feed-header'
 import FounderCard from './founder-card'
 import InvestorCard from './investor-card'
@@ -56,15 +57,12 @@ async function FoundersFeed({
   userId: string
   connMap: Record<string, ConnectionInfo>
 }) {
-  const supabase = await createClient()
-  const { data: startups } = await supabase
-    .from('startups')
-    .select('*, profiles!inner(id, full_name, avatar_url)')
-    .neq('founder_id', userId)
-    .eq('published', true)
-    .order('created_at', { ascending: false })
+  // Cached list (same for everyone); exclude yourself at request time.
+  const startups = (await getPublishedStartups()).filter(
+    (s) => s.founder_id !== userId
+  )
 
-  if (!startups?.length) {
+  if (!startups.length) {
     return (
       <p className="text-center text-muted-foreground text-sm pt-20">
         No startups listed yet. Check back soon.
@@ -78,7 +76,7 @@ async function FoundersFeed({
         <FounderCard
           key={s.id}
           startup={s as Parameters<typeof FounderCard>[0]['startup']}
-          connection={connMap[(s.profiles as { id: string }).id] ?? null}
+          connection={connMap[s.profiles.id] ?? null}
         />
       ))}
     </>
@@ -92,14 +90,11 @@ async function InvestorsFeed({
   userId: string
   connMap: Record<string, ConnectionInfo>
 }) {
-  const supabase = await createClient()
-  const { data: investors } = await supabase
-    .from('investor_details')
-    .select('*, profiles!inner(id, full_name, avatar_url)')
-    .neq('investor_id', userId)
-    .order('created_at', { ascending: false })
+  // Cached list (same for everyone); exclude yourself at request time.
+  const { investors: allInvestors, offers } = await getActiveInvestors()
+  const investors = allInvestors.filter((i) => i.investor_id !== userId)
 
-  if (!investors?.length) {
+  if (!investors.length) {
     return (
       <p className="text-center text-muted-foreground text-sm pt-20">
         No investors listed yet. Check back soon.
@@ -107,16 +102,8 @@ async function InvestorsFeed({
     )
   }
 
-  // Fetch active offers for these investors
-  const investorIds = investors.map((i) => i.investor_id)
-  const { data: offers } = await supabase
-    .from('investment_offers')
-    .select('id, investor_id, title, amount, stage, sectors, status, links')
-    .in('investor_id', investorIds)
-    .eq('status', 'active')
-
   const offersByInvestor: Record<string, typeof offers> = {}
-  for (const o of offers ?? []) {
+  for (const o of offers) {
     if (!offersByInvestor[o.investor_id]) offersByInvestor[o.investor_id] = []
     offersByInvestor[o.investor_id]!.push(o)
   }
@@ -127,7 +114,7 @@ async function InvestorsFeed({
         <InvestorCard
           key={inv.id}
           investor={inv as Parameters<typeof InvestorCard>[0]['investor']}
-          connection={connMap[(inv.profiles as { id: string }).id] ?? null}
+          connection={connMap[inv.profiles.id] ?? null}
           offers={offersByInvestor[inv.investor_id] ?? []}
         />
       ))}

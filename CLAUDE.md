@@ -58,6 +58,30 @@ store for multi-instance deployments). Two moderate `npm audit` advisories
 remain inside Next's bundled `postcss`; they clear only via a Next upgrade,
 not a forced downgrade.
 
+# Caching & CDN
+
+Deployed on Vercel. We use the lightweight ("previous") caching model — NOT
+Cache Components (`cacheComponents` stays off, since every `/app/*` route reads
+auth cookies at request time).
+
+- **Cached data:** the non-personalized feed lists (published startups, active
+  investors + offers) live in `src/lib/data/feed.ts` behind `unstable_cache`
+  (Vercel Data Cache), read via the cookieless service-role client. Per-user
+  bits (auth, connection state, excluding yourself) stay uncached in the feed
+  page. Lists also time-revalidate every 5 min.
+- **Invalidation:** mutations in `src/app/actions/profile.ts` call
+  `revalidateTag('startups' | 'investors' | 'offers', 'max')` (two-arg form is
+  required in Next 16). On Vercel this purges the Data Cache automatically — no
+  manual CDN purge needed.
+- **Page HTML:** `/app/*` is dynamic (cookies) so it isn't CDN-cached; the win
+  is avoiding a Supabase round-trip per request. Marketing/auth routes (`/`,
+  `/signup`, `/forgot-password`, `/auth/*`) are static and CDN-cached by Vercel.
+- **Assets:** `/_next/static` is already hashed + `immutable`; Vercel's CDN
+  serves them, so no `assetPrefix` is configured.
+
+If you later flip to a non-Vercel CDN, add an explicit CDN purge alongside the
+`revalidateTag` calls (the tag invalidates Next's cache, not a 3rd-party CDN).
+
 ## Known follow-up
 
 - OAuth-created users default to the `founder` role (the `handle_new_user`
