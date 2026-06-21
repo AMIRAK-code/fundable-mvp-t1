@@ -1,5 +1,5 @@
 import webpush from 'web-push'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 webpush.setVapidDetails(
   process.env.VAPID_SUBJECT!,
@@ -11,7 +11,9 @@ export async function pushToUser(
   userId: string,
   payload: { title: string; body: string; url: string }
 ) {
-  const supabase = await createClient()
+  // Reading another user's subscriptions requires bypassing the (correct)
+  // owner-only RLS on push_subscriptions, so this uses the service role.
+  const supabase = createAdminClient()
   const { data: subs } = await supabase
     .from('push_subscriptions')
     .select('endpoint, p256dh, auth')

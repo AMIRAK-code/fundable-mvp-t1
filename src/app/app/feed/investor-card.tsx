@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { User, Briefcase, Code2, Link2, Globe, Camera, ExternalLink, ChevronDown } from 'lucide-react'
 import ConnectButton from './connect-button'
+import { safeExternalUrl } from '@/lib/security/url'
 import type { ConnectionStatus, SocialLinks } from '@/lib/supabase/types'
 
 interface Investor {
@@ -164,15 +165,16 @@ export default function InvestorCard({ investor, connection, offers = [] }: Prop
                     )}
                     {offerHasLinks && (
                       <div className="flex flex-wrap gap-1.5 pt-1">
-                        {LINK_ICONS.map(({ key, label, Icon }) =>
-                          ol[key] ? (
-                            <a key={key} href={ol[key]} target="_blank" rel="noopener noreferrer"
+                        {LINK_ICONS.map(({ key, label, Icon }) => {
+                          const href = safeExternalUrl(ol[key])
+                          return href ? (
+                            <a key={key} href={href} target="_blank" rel="noopener noreferrer"
                               className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
                               onClick={(e) => e.stopPropagation()}>
                               <Icon className="w-3 h-3" />{label}
                             </a>
                           ) : null
-                        )}
+                        })}
                       </div>
                     )}
                   </div>
@@ -186,15 +188,16 @@ export default function InvestorCard({ investor, connection, offers = [] }: Prop
             <div className="space-y-2">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Links</p>
               <div className="flex flex-wrap gap-2">
-                {LINK_ICONS.map(({ key, label, Icon }) =>
-                  offerLinks[key] ? (
-                    <a key={key} href={offerLinks[key]} target="_blank" rel="noopener noreferrer"
+                {LINK_ICONS.map(({ key, label, Icon }) => {
+                  const href = safeExternalUrl(offerLinks[key])
+                  return href ? (
+                    <a key={key} href={href} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
                       onClick={(e) => e.stopPropagation()}>
                       <Icon className="w-3.5 h-3.5" />{label}
                     </a>
                   ) : null
-                )}
+                })}
               </div>
             </div>
           )}

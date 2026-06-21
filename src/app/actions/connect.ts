@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { pushToUser } from '@/lib/push/send'
+import { rateLimit } from '@/lib/security/rate-limit'
 
 export async function sendConnect(receiverId: string): Promise<{ error: string | null }> {
   const supabase = await createClient()
@@ -10,6 +11,11 @@ export async function sendConnect(receiverId: string): Promise<{ error: string |
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
+
+  // Throttle to curb connection-request flooding.
+  if (!rateLimit(`connect:${user.id}`, 30, 60_000)) {
+    return { error: 'Too many requests. Please slow down.' }
+  }
 
   const { error } = await supabase
     .from('connections')

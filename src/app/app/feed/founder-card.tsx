@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Building2, Code2, Link2, Globe, Camera, ExternalLink, ChevronDown } from 'lucide-react'
 import ConnectButton from './connect-button'
+import { safeExternalUrl } from '@/lib/security/url'
 import type { ConnectionStatus, SocialLinks } from '@/lib/supabase/types'
 
 interface Startup {
@@ -99,11 +100,12 @@ export default function FounderCard({ startup, connection }: Props) {
             <div className="space-y-2">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Links</p>
               <div className="flex flex-wrap gap-2">
-                {LINK_ICONS.map(({ key, label, Icon }) =>
-                  links[key] ? (
+                {LINK_ICONS.map(({ key, label, Icon }) => {
+                  const href = safeExternalUrl(links[key])
+                  return href ? (
                     <a
                       key={key}
-                      href={links[key]}
+                      href={href}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
@@ -113,7 +115,7 @@ export default function FounderCard({ startup, connection }: Props) {
                       {label}
                     </a>
                   ) : null
-                )}
+                })}
               </div>
             </div>
           )}

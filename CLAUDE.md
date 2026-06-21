@@ -31,6 +31,33 @@ environment. They are marked done — revisit only if auth misbehaves.
 - Server actions for auth live in `src/app/actions/auth.ts`. `next` redirect
   targets are restricted to relative paths to avoid open redirects.
 
+# Security hardening checklist
+
+A platform security pass added these requirements. Marked done; revisit if
+something breaks.
+
+- [x] **Apply migration `0002_security_hardening.sql`** — version-controls
+      `investment_offers`, `push_subscriptions`, added columns, and a private
+      `message-media` bucket; enables RLS with owner-scoped policies; restricts
+      unpublished startup drafts to their owner.
+- [x] **Set `SUPABASE_SERVICE_ROLE_KEY`** (server-only secret) — push delivery
+      (`src/lib/push/send.ts`) reads other users' subscriptions via the service
+      role so `push_subscriptions` RLS can stay owner-only. Never expose this to
+      the client.
+- [x] **Verify CSP** — `next.config.ts` sets a Content-Security-Policy and
+      related headers. If a third-party embed/script is added later, update
+      `connect-src`/`script-src` accordingly.
+- [x] **Chat media is private** — stored in the private `message-media` bucket
+      and served via short-lived signed URLs; the DB stores the object path.
+
+Notes: social links and redirect targets are validated server-side
+(`src/lib/security/url.ts`); image uploads are MIME/size-checked
+(`src/lib/security/upload.ts`); abuse-prone actions are rate-limited
+(`src/lib/security/rate-limit.ts`, in-memory/best-effort — back with a durable
+store for multi-instance deployments). Two moderate `npm audit` advisories
+remain inside Next's bundled `postcss`; they clear only via a Next upgrade,
+not a forced downgrade.
+
 ## Known follow-up
 
 - OAuth-created users default to the `founder` role (the `handle_new_user`
