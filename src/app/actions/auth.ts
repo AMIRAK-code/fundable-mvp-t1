@@ -3,6 +3,16 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
+function siteUrl() {
+  return process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+}
+
+// Only allow relative, in-app redirect targets to avoid open-redirect abuse.
+function safeNext(next: FormDataEntryValue | null): string {
+  const value = typeof next === 'string' ? next : ''
+  return value.startsWith('/') && !value.startsWith('//') ? value : '/app/feed'
+}
+
 export async function login(
   _prevState: { error: string | null },
   formData: FormData
@@ -14,6 +24,76 @@ export async function login(
     password: formData.get('password') as string,
   })
 
+  if (error) return { error: error.message }
+
+  // If the account has a verified second factor, the password only gets us to
+  // aal1 — route to the MFA challenge before landing in the app.
+  const { data: aal } =
+    await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aal?.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel) {
+    const mfaUrl = `/auth/mfa?next=${encodeURIComponent(safeNext(formData.get('next')))}`
+    redirect(mfaUrl)
+  }
+
+  redirect(safeNext(formData.get('next')))
+}
+
+export async function sendMagicLink(
+  _prevState: { error: string | null; sent?: boolean },
+  formData: FormData
+): Promise<{ error: string | null; sent?: boolean }> {
+  const supabase = await createClient()
+  const email = (formData.get('email') as string).trim()
+  const next = safeNext(formData.get('next'))
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      // Don't silently create brand-new accounts from the login screen.
+      shouldCreateUser: false,
+      emailRedirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
+    },
+  })
+
+  if (error) return { error: error.message }
+  return { error: null, sent: true }
+}
+
+export async function requestPasswordReset(
+  _prevState: { error: string | null; sent?: boolean },
+  formData: FormData
+): Promise<{ error: string | null; sent?: boolean }> {
+  const supabase = await createClient()
+  const email = (formData.get('email') as string).trim()
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl()}/auth/callback?next=/auth/reset`,
+  })
+
+  if (error) return { error: error.message }
+  return { error: null, sent: true }
+}
+
+export async function updatePassword(
+  _prevState: { error: string | null },
+  formData: FormData
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+
+  // The recovery link established a session via /auth/callback, so this user
+  // is authenticated and allowed to set a new password.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Your reset link has expired. Request a new one.' }
+
+  const password = formData.get('password') as string
+  const confirm = formData.get('confirm') as string
+  if (password !== confirm) return { error: 'Passwords do not match.' }
+  if (password.length < 8)
+    return { error: 'Password must be at least 8 characters.' }
+
+  const { error } = await supabase.auth.updateUser({ password })
   if (error) return { error: error.message }
 
   redirect('/app/feed')

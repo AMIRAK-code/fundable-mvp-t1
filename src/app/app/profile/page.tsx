@@ -1,5 +1,6 @@
 import Image from 'next/image'
-import { User } from 'lucide-react'
+import Link from 'next/link'
+import { User, ShieldCheck, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import type { Profile, Startup, InvestorDetail, InvestmentOffer } from '@/lib/supabase/types'
 import FounderProfile from './founder-profile'
@@ -56,6 +57,19 @@ export default async function ProfilePage() {
       ) : (
         <InvestorProfileSection userId={user!.id} />
       )}
+
+      <hr className="border-white/10" />
+
+      <Link
+        href="/app/security"
+        className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 hover:bg-white/10 transition-colors"
+      >
+        <span className="flex items-center gap-3">
+          <ShieldCheck className="w-5 h-5 text-[var(--brand-primary)]" />
+          <span className="text-sm font-medium">Security &amp; 2FA</span>
+        </span>
+        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+      </Link>
 
       <LogoutButton />
     </div>
