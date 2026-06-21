@@ -15,6 +15,16 @@ export interface Profile {
   full_name: string | null
   avatar_url: string | null
   bio: string | null
+  is_admin: boolean
+  created_at: string
+}
+
+export interface AppEvent {
+  id: string
+  type: string
+  level: 'info' | 'warn' | 'error'
+  message: string | null
+  context: Record<string, unknown>
   created_at: string
 }
 
@@ -116,6 +126,7 @@ export type Database = {
       messages: { Row: Message; Insert: Omit<Message, 'id' | 'created_at'>; Update: never }
       investment_offers: { Row: InvestmentOffer; Insert: Omit<InvestmentOffer, 'id' | 'created_at'>; Update: Partial<Omit<InvestmentOffer, 'id' | 'created_at'>> }
       push_subscriptions: { Row: PushSubscription; Insert: Omit<PushSubscription, 'id' | 'created_at'>; Update: Partial<Omit<PushSubscription, 'id' | 'created_at'>> }
+      app_events: { Row: AppEvent; Insert: Omit<AppEvent, 'id' | 'created_at'>; Update: never }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 // Proxy runs on the Node.js runtime (edge is not supported here), which is fine
 // for the Supabase SSR client. See node_modules/next/dist/docs → proxy.js.
 
-const PROTECTED_PREFIXES = ['/app', '/onboarding']
+const PROTECTED_PREFIXES = ['/app', '/onboarding', '/admin']
 const AUTH_ROUTES = ['/login', '/signup']
 
 export async function proxy(request: NextRequest) {
