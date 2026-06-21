@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react'
 import Link from 'next/link'
 import { Building2, TrendingUp } from 'lucide-react'
 import { signup } from '@/app/actions/auth'
+import OAuthButtons from '@/components/auth/oauth-buttons'
 import type { Role } from '@/lib/supabase/types'
 
 const ROLES: { value: Role; label: string; tagline: string; icon: React.ReactNode }[] = [
@@ -46,6 +47,8 @@ export default function SignupPage() {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-8">
       <h2 className="text-xl font-semibold mb-6">Create your account</h2>
+
+      <OAuthButtons next="/onboarding" />
 
       {/* Role selector */}
       <div className="grid grid-cols-2 gap-3 mb-6">

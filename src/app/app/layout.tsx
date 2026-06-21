@@ -12,6 +12,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
+  // Enforce MFA: if the account has a verified second factor but this session
+  // is still aal1, send them to the challenge before any app route renders.
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aal?.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel) {
+    redirect('/auth/mfa')
+  }
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('full_name')
