@@ -82,6 +82,25 @@ auth cookies at request time).
 If you later flip to a non-Vercel CDN, add an explicit CDN purge alongside the
 `revalidateTag` calls (the tag invalidates Next's cache, not a 3rd-party CDN).
 
+# Admin monitoring dashboard
+
+`/admin` is a platform monitoring dashboard (product + operational metrics).
+
+- **Access:** gated on `profiles.is_admin` (added in migration
+  `0003_admin_monitoring.sql`). The `/admin` layout checks it server-side and
+  redirects non-admins; `/admin` is also in `proxy.ts` protected prefixes. Grant
+  access with: `update profiles set is_admin = true where id = '<uid>'`. A
+  "Platform monitoring" link appears on the profile page for admins only.
+- **Metrics:** computed in `src/lib/data/admin.ts` via the service-role client
+  (after the is_admin gate), cached 60s (`unstable_cache`, tag `admin-metrics`).
+  Stat cards + dependency-free SVG bar charts (`src/app/admin/bar-chart.tsx`).
+  Time-series bucket raw rows in JS — fine now; move to SQL `date_trunc`/rollups
+  at scale (noted in the file).
+- **Operational events:** `app_events` table (server-only RLS) is written via
+  `logEvent()` in `src/lib/monitoring/events.ts` (best-effort, never throws).
+  Currently instrumented: push delivery failures. This is the seam for a real
+  APM (Sentry/Vercel) later — swap the sink in `logEvent`, keep call sites.
+
 ## Known follow-up
 
 - OAuth-created users default to the `founder` role (the `handle_new_user`

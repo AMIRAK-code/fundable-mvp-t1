@@ -1,5 +1,6 @@
 import webpush from 'web-push'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logEvent } from '@/lib/monitoring/events'
 
 webpush.setVapidDetails(
   process.env.VAPID_SUBJECT!,
@@ -21,7 +22,7 @@ export async function pushToUser(
 
   if (!subs?.length) return
 
-  await Promise.allSettled(
+  const results = await Promise.allSettled(
     subs.map((sub) =>
       webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
@@ -29,4 +30,13 @@ export async function pushToUser(
       )
     )
   )
+
+  const failed = results.filter((r) => r.status === 'rejected').length
+  if (failed > 0) {
+    await logEvent('push.delivery_failed', {
+      level: 'warn',
+      message: `${failed}/${results.length} push notifications failed`,
+      context: { userId, total: results.length, failed },
+    })
+  }
 }
