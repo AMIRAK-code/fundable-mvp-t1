@@ -61,6 +61,15 @@ export interface Connection {
   created_at: string
 }
 
+export interface PushSubscription {
+  id: string
+  user_id: string
+  endpoint: string
+  p256dh: string
+  auth: string
+  created_at: string
+}
+
 export interface ChatRoom {
   id: string
   connection_id: string
@@ -106,6 +115,7 @@ export type Database = {
       chat_rooms: { Row: ChatRoom; Insert: Omit<ChatRoom, 'id' | 'created_at'>; Update: never }
       messages: { Row: Message; Insert: Omit<Message, 'id' | 'created_at'>; Update: never }
       investment_offers: { Row: InvestmentOffer; Insert: Omit<InvestmentOffer, 'id' | 'created_at'>; Update: Partial<Omit<InvestmentOffer, 'id' | 'created_at'>> }
+      push_subscriptions: { Row: PushSubscription; Insert: Omit<PushSubscription, 'id' | 'created_at'>; Update: Partial<Omit<PushSubscription, 'id' | 'created_at'>> }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

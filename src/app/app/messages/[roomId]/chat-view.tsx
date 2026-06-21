@@ -6,6 +6,9 @@ import Image from 'next/image'
 import { ArrowLeft, Send, User, ImageIcon, X, ChevronDown, Briefcase, Code2, Link2, Globe, Camera, ExternalLink } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { notifyNewMessage } from '@/app/actions/push'
+import { safeExternalUrl } from '@/lib/security/url'
+import { validateImageUpload } from '@/lib/security/upload'
+import SignedImage from './signed-image'
 import type { SocialLinks, Role } from '@/lib/supabase/types'
 
 interface Msg {
@@ -114,14 +117,15 @@ function FounderProfilePanel({ startup }: { startup: FounderProfile['startup'] }
         <div className="space-y-1.5">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Links</p>
           <div className="flex flex-wrap gap-1.5">
-            {LINK_ICONS.map(({ key, label, Icon }) =>
-              links[key] ? (
-                <a key={key} href={links[key]} target="_blank" rel="noopener noreferrer"
+            {LINK_ICONS.map(({ key, label, Icon }) => {
+              const href = safeExternalUrl(links[key])
+              return href ? (
+                <a key={key} href={href} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors">
                   <Icon className="w-3.5 h-3.5" />{label}
                 </a>
               ) : null
-            )}
+            })}
           </div>
         </div>
       )}
@@ -172,14 +176,15 @@ function InvestorProfilePanel({ detail, offers }: { detail: InvestorProfile['det
                 )}
                 {offerHasLinks && (
                   <div className="flex flex-wrap gap-1.5 pt-1">
-                    {LINK_ICONS.map(({ key, label, Icon }) =>
-                      ol[key] ? (
-                        <a key={key} href={ol[key]} target="_blank" rel="noopener noreferrer"
+                    {LINK_ICONS.map(({ key, label, Icon }) => {
+                      const href = safeExternalUrl(ol[key])
+                      return href ? (
+                        <a key={key} href={href} target="_blank" rel="noopener noreferrer"
                           className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors">
                           <Icon className="w-3 h-3" />{label}
                         </a>
                       ) : null
-                    )}
+                    })}
                   </div>
                 )}
               </div>
@@ -198,6 +203,7 @@ export default function ChatView({ roomId, currentUserId, otherUser, initialMess
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const [imagePreview, setImagePreview] = useState<{ file: File; url: string } | null>(null)
   const [profileExpanded, setProfileExpanded] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -243,18 +249,31 @@ export default function ChatView({ roomId, currentUserId, otherUser, initialMess
   }
 
   async function handleImageSend(file: File) {
+    const valid = validateImageUpload(file)
+    if (!valid.ok) {
+      setUploadError(valid.error)
+      setImagePreview(null)
+      return
+    }
+    setUploadError(null)
     setUploading(true)
-    const ext = file.name.split('.').pop() ?? 'jpg'
-    const path = `${roomId}/${Date.now()}.${ext}`
-    const { error: uploadError } = await supabase.storage.from('message-media').upload(path, file)
-    if (uploadError) { setUploading(false); return }
-    const { data: { publicUrl } } = supabase.storage.from('message-media').getPublicUrl(path)
+    // Path is keyed by room; the message row stores this path (not a public
+    // URL) and images are served via short-lived signed URLs.
+    const path = `${roomId}/${Date.now()}.${valid.ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('message-media')
+      .upload(path, file, { contentType: file.type })
+    if (uploadError) {
+      setUploadError('Upload failed. Please try again.')
+      setUploading(false)
+      return
+    }
     await supabase.from('messages').insert({
       chat_room_id: roomId,
       sender_id: currentUserId,
       content: '',
       message_type: 'image',
-      media_url: publicUrl,
+      media_url: path,
     })
     setImagePreview(null)
     setUploading(false)
@@ -264,6 +283,13 @@ export default function ChatView({ roomId, currentUserId, otherUser, initialMess
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    const valid = validateImageUpload(file)
+    if (!valid.ok) {
+      setUploadError(valid.error)
+      e.target.value = ''
+      return
+    }
+    setUploadError(null)
     setImagePreview({ file, url: URL.createObjectURL(file) })
     e.target.value = ''
   }
@@ -333,21 +359,7 @@ export default function ChatView({ roomId, currentUserId, otherUser, initialMess
               )}
 
               {msg.message_type === 'image' && msg.media_url ? (
-                <a
-                  href={msg.media_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`max-w-[72%] rounded-2xl overflow-hidden block ${isOwn ? 'rounded-br-sm' : 'rounded-bl-sm'}`}
-                >
-                  <Image
-                    src={msg.media_url}
-                    alt="Image"
-                    width={240}
-                    height={240}
-                    className="object-cover max-h-60 w-auto"
-                    unoptimized
-                  />
-                </a>
+                <SignedImage path={msg.media_url} isOwn={isOwn} />
               ) : (
                 <div className={[
                   'max-w-[72%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words',
@@ -376,6 +388,12 @@ export default function ChatView({ roomId, currentUserId, otherUser, initialMess
             </button>
           </div>
         </div>
+      )}
+
+      {uploadError && (
+        <p className="px-4 py-2 text-xs text-destructive bg-destructive/10 flex-shrink-0">
+          {uploadError}
+        </p>
       )}
 
       {/* Input bar */}

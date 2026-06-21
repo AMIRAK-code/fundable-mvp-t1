@@ -2,6 +2,20 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { safeExternalUrl } from '@/lib/security/url'
+import { validateImageUpload } from '@/lib/security/upload'
+
+const LINK_KEYS = ['github', 'linkedin', 'reddit', 'instagram', 'website'] as const
+
+// Collect social links, keeping only safe http(s) URLs (drops javascript:, etc.)
+function collectLinks(formData: FormData): Record<string, string> {
+  const links: Record<string, string> = {}
+  for (const key of LINK_KEYS) {
+    const safe = safeExternalUrl(formData.get(`link_${key}`) as string | null)
+    if (safe) links[key] = safe
+  }
+  return links
+}
 
 export async function upsertStartup(
   _prevState: { error: string | null; success: boolean },
@@ -21,23 +35,20 @@ export async function upsertStartup(
 
   let heroImageUrl: string | undefined
   if (heroFile && heroFile.size > 0) {
-    const ext = heroFile.name.split('.').pop() ?? 'jpg'
-    const path = `${user.id}/${Date.now()}.${ext}`
+    const valid = validateImageUpload(heroFile)
+    if (!valid.ok) return { error: valid.error, success: false }
+    const path = `${user.id}/${Date.now()}.${valid.ext}`
     const { error: uploadError } = await supabase.storage
       .from('hero-images')
-      .upload(path, heroFile, { upsert: true })
-    if (uploadError) return { error: uploadError.message, success: false }
+      .upload(path, heroFile, { upsert: true, contentType: heroFile.type })
+    if (uploadError) return { error: 'Image upload failed. Please try again.', success: false }
     const {
       data: { publicUrl },
     } = supabase.storage.from('hero-images').getPublicUrl(path)
     heroImageUrl = publicUrl
   }
 
-  const links: Record<string, string> = {}
-  for (const key of ['github', 'linkedin', 'reddit', 'instagram', 'website']) {
-    const val = (formData.get(`link_${key}`) as string | null)?.trim()
-    if (val) links[key] = val
-  }
+  const links = collectLinks(formData)
 
   const payload = {
     name,
@@ -158,11 +169,7 @@ export async function upsertInvestmentOffer(
   const sectorsRaw = (formData.get('sectors') as string) ?? ''
   const sectors = sectorsRaw.split(',').map((s) => s.trim()).filter(Boolean)
 
-  const links: Record<string, string> = {}
-  for (const key of ['github', 'linkedin', 'reddit', 'instagram', 'website']) {
-    const val = (formData.get(`link_${key}`) as string | null)?.trim()
-    if (val) links[key] = val
-  }
+  const links = collectLinks(formData)
 
   const payload = { title, description, amount: amount || null, stage: stage || null, sectors, links }
 

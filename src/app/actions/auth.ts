@@ -2,6 +2,9 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { safeRelativePath } from '@/lib/security/url'
+import { validateImageUpload } from '@/lib/security/upload'
+import { rateLimit } from '@/lib/security/rate-limit'
 
 function siteUrl() {
   return process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
@@ -9,8 +12,7 @@ function siteUrl() {
 
 // Only allow relative, in-app redirect targets to avoid open-redirect abuse.
 function safeNext(next: FormDataEntryValue | null): string {
-  const value = typeof next === 'string' ? next : ''
-  return value.startsWith('/') && !value.startsWith('//') ? value : '/app/feed'
+  return safeRelativePath(typeof next === 'string' ? next : null)
 }
 
 export async function login(
@@ -46,6 +48,11 @@ export async function sendMagicLink(
   const email = (formData.get('email') as string).trim()
   const next = safeNext(formData.get('next'))
 
+  // Throttle to limit email-sending abuse / enumeration.
+  if (!rateLimit(`magic:${email.toLowerCase()}`, 5, 15 * 60_000)) {
+    return { error: 'Too many requests. Please wait a few minutes and try again.' }
+  }
+
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
@@ -65,6 +72,11 @@ export async function requestPasswordReset(
 ): Promise<{ error: string | null; sent?: boolean }> {
   const supabase = await createClient()
   const email = (formData.get('email') as string).trim()
+
+  // Throttle to limit reset-email spam / enumeration.
+  if (!rateLimit(`reset:${email.toLowerCase()}`, 5, 15 * 60_000)) {
+    return { error: 'Too many requests. Please wait a few minutes and try again.' }
+  }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${siteUrl()}/auth/callback?next=/auth/reset`,
@@ -152,14 +164,15 @@ export async function updateProfile(
   let avatarUrl: string | undefined
 
   if (avatarFile && avatarFile.size > 0) {
-    const ext = avatarFile.name.split('.').pop() ?? 'jpg'
-    const path = `${user.id}/avatar.${ext}`
+    const valid = validateImageUpload(avatarFile)
+    if (!valid.ok) return { error: valid.error }
+    const path = `${user.id}/avatar.${valid.ext}`
 
     const { error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(path, avatarFile, { upsert: true })
+      .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type })
 
-    if (uploadError) return { error: uploadError.message }
+    if (uploadError) return { error: 'Image upload failed. Please try again.' }
 
     const {
       data: { publicUrl },

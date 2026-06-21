@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { safeRelativePath } from '@/lib/security/url'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/app/feed'
+  // Restrict to relative in-app paths to prevent open redirects.
+  const next = safeRelativePath(searchParams.get('next'))
 
   if (code) {
     const supabase = await createClient()
