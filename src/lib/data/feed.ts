@@ -87,3 +87,70 @@ export const getActiveInvestors = unstable_cache(
   ['feed:active-investors'],
   { tags: ['investors', 'offers'], revalidate: LIST_REVALIDATE_SECONDS }
 )
+
+// Per-conversation public profile panel: another user's profile plus their
+// published startup (founders) or active offers (investors). Same for every
+// viewer, so it's cached by user id (the argument is part of the cache key).
+// Tagged broadly so startup/offer/investor edits invalidate it; profile edits
+// invalidate via the 'startups'/'investors' tags too (see updateProfile).
+export interface PeerProfile {
+  otherUser: {
+    id: string
+    full_name: string | null
+    avatar_url: string | null
+    role: 'founder' | 'investor'
+  } | null
+  profileData:
+    | { type: 'founder'; startup: Record<string, unknown> }
+    | { type: 'investor'; detail: Record<string, unknown>; offers: Record<string, unknown>[] }
+    | null
+}
+
+export const getPeerProfile = unstable_cache(
+  async (userId: string): Promise<PeerProfile> => {
+    const supabase = createAdminClient()
+    const { data: otherUser } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url, role')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (!otherUser) return { otherUser: null, profileData: null }
+
+    if (otherUser.role === 'founder') {
+      const { data: startup } = await supabase
+        .from('startups')
+        .select('id, name, pitch, hero_image_url, industry, links')
+        .eq('founder_id', userId)
+        .eq('published', true)
+        .limit(1)
+        .maybeSingle()
+      return {
+        otherUser,
+        profileData: startup ? { type: 'founder', startup } : null,
+      }
+    }
+
+    const [{ data: detail }, { data: offers }] = await Promise.all([
+      supabase
+        .from('investor_details')
+        .select('id, firm_name, check_size, sectors, thesis')
+        .eq('investor_id', userId)
+        .maybeSingle(),
+      supabase
+        .from('investment_offers')
+        .select('id, title, description, amount, stage, sectors, status, links')
+        .eq('investor_id', userId)
+        .eq('status', 'active'),
+    ])
+
+    return {
+      otherUser,
+      profileData: detail
+        ? { type: 'investor', detail, offers: offers ?? [] }
+        : null,
+    }
+  },
+  ['feed:peer-profile'],
+  { tags: ['startups', 'investors', 'offers'], revalidate: LIST_REVALIDATE_SECONDS }
+)
