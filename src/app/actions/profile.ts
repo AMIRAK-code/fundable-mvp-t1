@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { safeExternalUrl } from '@/lib/security/url'
 import { validateImageUpload } from '@/lib/security/upload'
@@ -72,6 +72,7 @@ export async function upsertStartup(
     if (error) return { error: error.message, success: false }
   }
 
+  revalidateTag('startups', 'max')
   revalidatePath('/app/profile')
   return { error: null, success: true }
 }
@@ -93,6 +94,7 @@ export async function toggleStartupPublished(
     .eq('founder_id', user.id)
 
   if (error) return { error: error.message }
+  revalidateTag('startups', 'max')
   revalidatePath('/app/profile')
   revalidatePath('/app/feed')
   return { error: null }
@@ -112,6 +114,7 @@ export async function deleteStartup(startupId: string): Promise<{ error: string 
     .eq('founder_id', user.id)
 
   if (error) return { error: error.message }
+  revalidateTag('startups', 'max')
   revalidatePath('/app/profile')
   return { error: null }
 }
@@ -147,6 +150,7 @@ export async function upsertInvestorDetails(
   )
 
   if (error) return { error: error.message, success: false }
+  revalidateTag('investors', 'max')
   revalidatePath('/app/profile')
   return { error: null, success: true }
 }
@@ -187,6 +191,7 @@ export async function upsertInvestmentOffer(
     if (error) return { error: error.message, success: false }
   }
 
+  revalidateTag('offers', 'max')
   revalidatePath('/app/profile')
   revalidatePath('/app/feed')
   return { error: null, success: true }
@@ -206,6 +211,7 @@ export async function deleteInvestmentOffer(offerId: string): Promise<{ error: s
     .eq('investor_id', user.id)
 
   if (error) return { error: error.message }
+  revalidateTag('offers', 'max')
   revalidatePath('/app/profile')
   revalidatePath('/app/feed')
   return { error: null }
@@ -228,6 +234,7 @@ export async function toggleOfferStatus(
     .eq('investor_id', user.id)
 
   if (error) return { error: error.message }
+  revalidateTag('offers', 'max')
   revalidatePath('/app/profile')
   revalidatePath('/app/feed')
   return { error: null }
