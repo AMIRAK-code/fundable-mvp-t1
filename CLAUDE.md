@@ -1,5 +1,24 @@
 @AGENTS.md
 
+# Environment & local setup
+
+All runtime config is via env vars — see `.env.example` for the full list
+(`cp .env.example .env.local` and fill in). Required: the Supabase URL + anon
+key, the server-only `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL`, and
+VAPID keys for Web Push (`npx web-push generate-vapid-keys --json`).
+
+These live outside the repo (your machine / Vercel / the Supabase dashboard) and
+cannot be set from a CI sandbox. To complete the checklists below in a real
+project:
+
+1. Apply migrations in order (`supabase db push`, or paste each
+   `supabase/migrations/000*.sql` into the SQL editor).
+2. Configure Supabase Auth (providers, redirect URLs, TOTP) per the auth
+   checklist.
+3. Seed a test account:
+   `node scripts/create-test-account.mjs --email you@test.dev --password 'Passw0rd!' --role founder --name "Test" [--admin]`
+   (`--admin` flips `profiles.is_admin` so it can open `/admin`).
+
 # Auth system setup checklist
 
 Fundable uses Supabase Auth with email/password, Google + LinkedIn OAuth,
