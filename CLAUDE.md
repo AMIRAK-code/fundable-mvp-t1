@@ -19,6 +19,21 @@ project:
    `node scripts/create-test-account.mjs --email you@test.dev --password 'Passw0rd!' --role founder --name "Test" [--admin]`
    (`--admin` flips `profiles.is_admin` so it can open `/admin`).
 
+## Running a Claude Code web session against Supabase
+
+The cloud sandbox starts with no secrets. To connect a web session to the real
+project, add the env vars (`NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
+`NEXT_PUBLIC_SITE_URL`, and the VAPID keys) in the **environment configuration**
+of Claude Code on the web (Environment Variables) — not pasted into chat. They
+are injected at container start, so they only appear in a **new** session, not
+one already running. Verify with:
+`node -e "console.log(!!process.env.SUPABASE_SERVICE_ROLE_KEY)"` (expect `true`),
+then seed an account and `npm run dev`. The sandbox can reach Supabase
+(outbound HTTPS is allowed) but binds to its own localhost — there's no UI for a
+human to view; drive/verify via curl. Real interactive use is `npm run dev` on
+your own machine.
+
 # Auth system setup checklist
 
 Fundable uses Supabase Auth with email/password, Google + LinkedIn OAuth,
