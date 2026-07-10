@@ -72,8 +72,8 @@ struct GoalCard: View {
     private var ladder: some View {
         let minis = goal.sortedMiniGoals
         return VStack(spacing: 8) {
-            ForEach(Array(minis.enumerated()), id: \.element.id) { index, mini in
-                miniGoalRow(mini, index: index, minis: minis)
+            ForEach(minis.indices, id: \.self) { index in
+                miniGoalRow(minis[index], index: index, minis: minis)
             }
         }
     }

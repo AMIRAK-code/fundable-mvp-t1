@@ -6,6 +6,13 @@ at a time, track wellbeing (Apple Health, diet, skincare, weekly space reset),
 and get a daily dose of discipline from the quote engine — with Home Screen
 and Lock Screen widgets, styled with iOS 26 **Liquid Glass**.
 
+On top of the core loop: an onboarding protocol picker (5 AM Club, Student
+Athlete, Founder Mode, Glow-Up…), a 0–100 **momentum score** with streak
+freeze tokens, morning brief / evening shutdown bookends, deep-focus timers
+with **Live Activities** in the Dynamic Island, a weekly review with a letter
+grade and shareable report card, a private progress-photo vault, Siri
+shortcuts, and an anti-burnout recovery guardrail.
+
 > The full product brainstorm (design language, feature specs, and suggested
 > additions) lives in [DESIGN.md](DESIGN.md).
 
@@ -46,23 +53,31 @@ DreamChaser/
 ├── DreamChaser.xcodeproj
 ├── DreamChaser/               # App target
 │   ├── DreamChaserApp.swift   # Entry point, seeding, quote refresh
-│   ├── RootView.swift         # Liquid Glass tab bar
+│   ├── RootView.swift         # Liquid Glass tab bar + onboarding cover
+│   ├── DreamChaserShortcuts.swift  # Siri / Shortcuts phrases
 │   ├── Theme/                 # Glass cards, progress rings, background
 │   ├── Views/
-│   │   ├── Today/             # Routine sections + checklists + cleaning prompt
+│   │   ├── Onboarding/        # Routine template picker (5 AM Club, …)
+│   │   ├── Today/             # Sections, checklists, morning/evening bookends
 │   │   ├── Goals/             # Ultimate goal → ordered mini-goal ladder
-│   │   ├── Wellbeing/         # HealthKit stats, diet, skincare, cleaning
+│   │   ├── Focus/             # Deep-focus timer (Live Activity)
+│   │   ├── Review/            # Weekly review, grade, shareable report card
+│   │   ├── Wellbeing/         # HealthKit, diet, skincare, photo vault
 │   │   ├── Quotes/            # Quote of the day + library + favorites
-│   │   └── Settings/          # Reminders, data reset, about
+│   │   └── Settings/          # Reminders, tokens, data reset, about
 │   └── Services/              # HealthKitService, NotificationService
 ├── DreamChaserWidgets/        # Widget extension target
 │   ├── RoutineProgressWidget  # Progress ring + interactive check-off
+│   ├── MomentumWidget         # 0–100 momentum score + streak + tokens
 │   ├── QuoteWidget            # Daily quote (Home + Lock Screen)
-│   └── GoalWidget             # Goal progress + next mini goal
+│   ├── GoalWidget             # Goal progress + next mini goal
+│   └── FocusLiveActivity      # Lock Screen + Dynamic Island countdown
 └── Shared/                    # Compiled into BOTH targets
-    ├── Models/                # SwiftData models (routine, goals, wellbeing)
+    ├── Models/                # SwiftData models (routine, goals, wellbeing,
+    │                          #   journal, focus sessions, progress photos)
     ├── Quotes/                # Quote engine + quotes-seed.json
-    ├── Intents/               # ToggleRoutineItemIntent (interactive widgets)
+    ├── Intents/               # Widget toggle + Siri intents
+    ├── MomentumEngine.swift   # Momentum score + streak freeze tokens
     └── SharedStore.swift      # App Group SwiftData container + seeding
 ```
 
@@ -80,9 +95,12 @@ API or your own backend, edit `refreshFromInternet()` in
 - **Apple Health on the simulator** works: open the Health app in the
   simulator and add sample steps/sleep to see the tiles fill in. If numbers
   stay at zero on a device, check Health → Sharing → Apps → Dream Chaser.
-- **First launch** seeds the default routine (Gym, Study, Work, Plan, Learn a
-  Skill), skincare steps, and the weekly room-reset task. Everything is
-  editable or deletable in the app.
+- **First launch** opens the protocol picker — choose a routine template
+  (every section and item is editable afterwards). Skincare steps and the
+  weekly room-reset task are seeded automatically.
+- **Live Activities** (focus timer in the Dynamic Island) can be disabled
+  system-wide in Settings → Face ID & Passcode / per-app; the in-app timer
+  works regardless.
 - **Weekly cleaning reminder** defaults to Sunday 10:00; change the day in
   Settings. The Today tab also shows an in-app prompt whenever a reset is due,
   with "Done today / Already did it / Later" options.

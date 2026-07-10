@@ -13,6 +13,9 @@ enum SharedStore {
         DietDay.self,
         SkincareStep.self,
         CleaningTask.self,
+        JournalEntry.self,
+        FocusSession.self,
+        ProgressPhoto.self,
     ])
 
     static func makeContainer() -> ModelContainer {
@@ -34,30 +37,12 @@ enum SharedStore {
         }
     }
 
-    /// Seeds the default routine, skincare steps, and cleaning task on first
-    /// launch. Each group is seeded independently so deleting everything in
-    /// one area doesn't resurrect the others.
+    /// Seeds skincare steps and the cleaning task on first launch. Routine
+    /// sections are created by the onboarding template picker instead
+    /// (see RoutineTemplate). Each group is seeded independently so deleting
+    /// everything in one area doesn't resurrect the others.
     static func seedIfNeeded(in container: ModelContainer) {
         let context = ModelContext(container)
-
-        if (try? context.fetchCount(FetchDescriptor<RoutineSection>())) == 0 {
-            let defaults: [(String, String, String, [String])] = [
-                ("Gym", "dumbbell", "orange", ["Train for 60 minutes", "Hit protein target", "10k steps"]),
-                ("Study", "book.fill", "blue", ["Deep-focus study block", "Review notes"]),
-                ("Work", "briefcase.fill", "indigo", ["Top priority task first", "Inbox zero by evening"]),
-                ("Plan", "calendar", "teal", ["Plan tomorrow before bed", "Review weekly goals"]),
-                ("Learn a Skill", "brain.head.profile", "purple", ["30 minutes of practice", "Log one thing you learned"]),
-            ]
-            for (index, entry) in defaults.enumerated() {
-                let section = RoutineSection(name: entry.0, symbol: entry.1, colorName: entry.2, sortOrder: index)
-                context.insert(section)
-                for (itemIndex, title) in entry.3.enumerated() {
-                    let item = RoutineItem(title: title, sortOrder: itemIndex)
-                    item.section = section
-                    context.insert(item)
-                }
-            }
-        }
 
         if (try? context.fetchCount(FetchDescriptor<SkincareStep>())) == 0 {
             let morning = ["Cleanser", "Moisturizer", "Sunscreen"]

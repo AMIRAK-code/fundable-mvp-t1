@@ -8,13 +8,9 @@ struct SettingsView: View {
     @AppStorage(NotificationService.Keys.cleaningEnabled) private var cleaningReminder = true
     @AppStorage(NotificationService.Keys.cleaningWeekday) private var cleaningWeekday = 1
     @AppStorage(NotificationService.Keys.morningKickoff) private var morningKickoff = false
+    @AppStorage("hasOnboarded.v1") private var hasOnboarded = false
 
     @State private var showingResetConfirmation = false
-
-    private let weekdays = [
-        (1, "Sunday"), (2, "Monday"), (3, "Tuesday"), (4, "Wednesday"),
-        (5, "Thursday"), (6, "Friday"), (7, "Saturday"),
-    ]
 
     var body: some View {
         NavigationStack {
@@ -23,8 +19,8 @@ struct SettingsView: View {
                     Toggle("Weekly cleaning reminder", isOn: $cleaningReminder)
                     if cleaningReminder {
                         Picker("Reminder day", selection: $cleaningWeekday) {
-                            ForEach(weekdays, id: \.0) { value, name in
-                                Text(name).tag(value)
+                            ForEach(1...7, id: \.self) { weekday in
+                                Text(Calendar.current.weekdaySymbols[weekday - 1]).tag(weekday)
                             }
                         }
                     }
@@ -40,10 +36,24 @@ struct SettingsView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
+                Section("Momentum") {
+                    LabeledContent("Streak freeze tokens", value: "\(MomentumEngine.tokens)")
+                    Text("Earn one per perfect week (max 3). A token is spent automatically to protect your streak when you miss a day.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                Section("Siri & Shortcuts") {
+                    Text("Try: “Log my diet”, “I cleaned my room”, or “Complete my next step” — followed by “in Dream Chaser”.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
                 Section("Data") {
                     Button("Reset all data", role: .destructive) {
                         showingResetConfirmation = true
                     }
+                    Text("Everything is stored on this device. To sync across devices later, enable the iCloud capability and CloudKit-ready models — see DESIGN.md.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
                 Section("About") {
                     LabeledContent("App", value: "Dream Chaser")
@@ -80,8 +90,15 @@ struct SettingsView: View {
         try? context.delete(model: DietDay.self)
         try? context.delete(model: SkincareStep.self)
         try? context.delete(model: CleaningTask.self)
+        try? context.delete(model: JournalEntry.self)
+        try? context.delete(model: FocusSession.self)
+        try? context.delete(model: ProgressPhoto.self)
         try? context.save()
         SharedStore.seedIfNeeded(in: context.container)
+        MomentumEngine.tokens = 0
+        MomentumEngine.protectedDates = []
+        // Send the user back through the template picker.
+        hasOnboarded = false
         WidgetCenter.shared.reloadAllTimelines()
     }
 }

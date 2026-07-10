@@ -28,6 +28,7 @@ struct WellbeingView: View {
                     healthSection
                     dietCard
                     skincareCard
+                    photoVaultLink
                     cleaningCard
                 }
                 .padding(.horizontal)
@@ -230,6 +231,34 @@ struct WellbeingView: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+
+    // MARK: Photo vault
+
+    private var photoVaultLink: some View {
+        NavigationLink {
+            PhotoVaultView()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "photo.on.rectangle.angled")
+                    .font(.title3)
+                    .foregroundStyle(.pink)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Progress photo vault")
+                        .font(.headline)
+                    Text("Private then-vs-now comparisons")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .glassCard(tint: .pink)
     }
 
     // MARK: Cleaning

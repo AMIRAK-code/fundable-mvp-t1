@@ -79,42 +79,68 @@ the medium size via App Intents), daily quote (Home + Lock Screen), and goal
 progress with the next mini goal. Widgets read the shared SwiftData store —
 the Home Screen is the real front door of a habit app.
 
-## 5. Suggested additions (the brainstorm)
+## 5. Suggested additions (the brainstorm) — now built ✅
 
-Rough priority order — ✦ = highest leverage next:
+All the software-only ideas from the original brainstorm are implemented:
 
-1. ✦ **Momentum score** — a single 0–100 number blending routine completion,
-   streak, diet adherence, and sleep. One number to protect daily; put it on
-   the small widget. (The data model already records everything needed.)
-2. ✦ **Morning brief / evening shutdown** — a 30-second guided flow: morning
-   shows the quote + today's plan + "commit"; evening asks what won the day
-   and one line of journaling. Bookends dramatically boost adherence.
-3. ✦ **Weekly review report card** — every Sunday: completion % per section,
-   diet ratio, sleep average, goal rungs climbed, letter grade. Sharable
-   image → organic marketing.
-4. **Focus timer per section** — tap Gym/Study to start a timed session with
-   a Live Activity in the Dynamic Island; logged minutes feed the section.
-5. **Siri & Shortcuts** — "Hey Siri, check off gym" (the App Intent already
-   exists), plus suggested automations (when I arrive at the gym…).
-6. **Apple Watch app** — the checklist on the wrist + complications; huge for
-   gym and skincare moments where the phone is away.
-7. **Routine templates** — onboarding quiz builds the first routine ("5 AM
-   Club", "Student Athlete", "Founder Mode", "Glow-Up Protocol").
-8. **Streak insurance** — one earned "freeze token" per perfect week protects
-   a streak from a bad day. Keeps streaks motivating instead of fragile.
-9. **Accountability partner** — share your report card with one friend;
-   optional "they see if I skip" pressure toggle.
-10. **Photo progress vault** — private monthly fitness/skincare photos,
-    side-by-side compare. Pairs naturally with the wellbeing tab.
-11. **Anti-burnout guardrails** — if sleep trends under 6h while completion
-    is 100%, suggest a recovery day. Chasing dreams ≠ grinding to dust; this
-    also differentiates the app ethically.
-12. **AI coach (later)** — weekly natural-language summary and routine
-    adjustment suggestions from on-device data.
-13. **iCloud sync / CloudKit** — multi-device + backup, prerequisite for any
-    social features.
-14. **Monetization (later)** — free: 3 sections, 1 goal, core widgets. Pro
-    (subscription): unlimited everything, Watch app, report cards, AI coach.
+1. ✅ **Momentum score** — 0–100 blending today's routine (45%), streak (20%,
+   saturates at 14 days), 7-day diet adherence (20%), and last night's sleep
+   vs. an 8h target (15%). Lives in the Today header, in a dedicated
+   `MomentumWidget` (Home Screen + Lock Screen circular), and is cached in
+   the App Group (`MomentumEngine`).
+2. ✅ **Morning brief / evening shutdown** — `MorningBriefView` (quote → the
+   plan → today's goal rung → "I commit to today") and `EveningReviewView`
+   (day score → win of the day → reflection). Cards surface on Today before
+   noon / after 6 PM until done; entries persist as `JournalEntry`.
+3. ✅ **Weekly review report card** — `WeeklyReviewView` (chart icon on
+   Today): per-section 7-day completion bars, diet %, sleep average, focus
+   minutes, active days, goal rungs, streak → weekly score + letter grade,
+   plus a shareable rendered report-card image.
+4. ✅ **Focus timer with Live Activity** — "Start focus session" on any
+   section (25/50/90 min). Countdown runs as a Live Activity on the Lock
+   Screen and in the Dynamic Island; completed minutes log as
+   `FocusSession` and feed the weekly review.
+5. ✅ **Siri & Shortcuts** — `DreamChaserShortcuts`: "Log my diet", "I
+   cleaned my room", "Complete my next step" (+ the widget toggle intent is
+   Shortcuts-visible too).
+6. ✅ **Routine templates / onboarding** — first launch presents five
+   protocols: Balanced Chaser, 5 AM Club, Student Athlete, Founder Mode,
+   Glow-Up Protocol. Reset-all-data sends you back through the picker.
+7. ✅ **Streak insurance** — earn one freeze token per perfect week (every
+   item, all 7 days; max 3 banked). A token auto-spends to bridge a missed
+   day so one bad day can't torch the chain. Balance shows in the Today
+   header, the Momentum widget, and Settings.
+8. ✅ **Accountability partner (v1)** — the weekly report card renders to an
+   image with a one-tap ShareLink ("send it to your accountability
+   partner"). The full version (partner sees your misses) needs a backend —
+   see below.
+9. ✅ **Photo progress vault** — private on-device photos
+   (`ProgressPhoto`, external storage), added via the system photo picker,
+   with then-vs-now side-by-side compare. Linked from Wellbeing.
+10. ✅ **Anti-burnout guardrails** — if last night's sleep was under 6h while
+    you're 3+ days into a streak, Today shows a "Recovery mode suggested"
+    card telling you to go lighter and protect the streak.
+11. ✅ **Coach (v1, deterministic)** — "Coach's notes" in the weekly review:
+    rule-based, on-device insights (strongest/weakest pillar, diet and sleep
+    callouts, focus minutes, rungs climbed). Swappable later for a real AI
+    coach via the Claude API without changing the UI.
+
+### Still on the roadmap (need things code alone can't provide)
+
+- **Apple Watch app** — requires adding a watchOS target, which Xcode
+  generates far more reliably than a hand-written project file: File → New →
+  Target → watchOS → App, check "Watch App for Existing iOS App", then share
+  the `Shared/` folder with the new target. The models and engine are
+  already target-agnostic, so the watch checklist is mostly UI.
+- **True accountability partner** — needs a backend (or CloudKit sharing)
+  so a friend can see your report automatically.
+- **iCloud sync (CloudKit)** — add the iCloud capability + container, then
+  make relationships optional and give every attribute a default (CloudKit's
+  SwiftData rules) before switching the `ModelConfiguration` to CloudKit.
+- **AI coach** — replace `coachNotes()` in `WeeklyReviewView` with a call to
+  an LLM over the same weekly stats.
+- **Monetization** — free: 3 sections, 1 goal, core widgets. Pro
+  (subscription): unlimited everything, Watch app, report cards, AI coach.
 
 ## 6. Technical notes
 
