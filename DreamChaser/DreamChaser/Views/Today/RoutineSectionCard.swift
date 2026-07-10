@@ -8,6 +8,7 @@ struct RoutineSectionCard: View {
     var section: RoutineSection
     var todayKey: String
     var onEdit: () -> Void
+    var onFocus: () -> Void
 
     @State private var completionPulse = 0
 
@@ -48,6 +49,9 @@ struct RoutineSectionCard: View {
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(.secondary)
             Menu {
+                Button("Start focus session", systemImage: "timer") {
+                    onFocus()
+                }
                 Button("Edit section", systemImage: "pencil") {
                     onEdit()
                 }

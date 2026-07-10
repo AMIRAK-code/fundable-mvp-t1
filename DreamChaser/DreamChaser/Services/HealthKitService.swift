@@ -42,6 +42,37 @@ final class HealthKitService {
         activeEnergy = await todaySum(.activeEnergyBurned, unit: .kilocalorie())
         exerciseMinutes = await todaySum(.appleExerciseTime, unit: .minute())
         sleepHours = await lastNightSleepHours()
+        if sleepHours > 0 {
+            // Widgets and the momentum score read this cache.
+            MomentumEngine.cacheSleep(hours: sleepHours)
+        }
+    }
+
+    /// Rough average nightly sleep over the past `days` days, for the weekly
+    /// review. Sums asleep time in the window and divides by the night count.
+    func sleepAverageHours(days: Int) async -> Double? {
+        guard isAvailable, days > 0 else { return nil }
+        let type = HKCategoryType(.sleepAnalysis)
+        let start = Calendar.current.date(byAdding: .day, value: -days, to: .now) ?? .now
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: .now)
+        let total: Double = await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: nil
+            ) { _, samples, _ in
+                let asleepSeconds = (samples as? [HKCategorySample] ?? [])
+                    .filter { sample in
+                        guard let value = HKCategoryValueSleepAnalysis(rawValue: sample.value) else { return false }
+                        return HKCategoryValueSleepAnalysis.allAsleepValues.contains(value)
+                    }
+                    .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+                continuation.resume(returning: asleepSeconds / 3600)
+            }
+            store.execute(query)
+        }
+        return total > 0 ? total / Double(days) : nil
     }
 
     private func todaySum(_ identifier: HKQuantityTypeIdentifier, unit: HKUnit) async -> Double {

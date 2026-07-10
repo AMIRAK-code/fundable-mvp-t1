@@ -387,6 +387,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Dream Chaser reads your steps, workouts, active energy, and sleep from Apple Health to power your wellbeing dashboard.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Dream Chaser can save workouts you log to Apple Health.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -417,6 +418,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Dream Chaser reads your steps, workouts, active energy, and sleep from Apple Health to power your wellbeing dashboard.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Dream Chaser can save workouts you log to Apple Health.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
