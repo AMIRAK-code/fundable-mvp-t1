@@ -1,0 +1,35 @@
+{
+  "products": [
+    {
+      "id": "remote-serum-copper-peptide",
+      "name": "Copper Peptide Scalp Ampoule",
+      "brand": "LabNine",
+      "category": "serum",
+      "summary": "Community-feed exclusive: copper-peptide ampoule for hairline and crown support, applied nightly.",
+      "heroIngredients": ["Copper peptides", "Adenosine"],
+      "tags": ["thinning", "receding", "growth"],
+      "priceTier": 3,
+      "rating": 4.5
+    },
+    {
+      "id": "remote-shampoo-cold-brew",
+      "name": "Cold Brew Coffee Shampoo",
+      "brand": "LabNine",
+      "category": "shampoo",
+      "summary": "Community-feed exclusive: cold-processed coffee shampoo for daily stimulation on oily scalps.",
+      "heroIngredients": ["Coffee extract", "Caffeine", "Mint"],
+      "tags": ["oily-scalp", "growth", "active"],
+      "priceTier": 2,
+      "rating": 4.3
+    }
+  ],
+  "tips": [
+    {
+      "id": "remote-tip-photo-light",
+      "title": "North-facing light wins",
+      "body": "Indirect daylight from a north-facing window is the most repeatable light source for progress photos — no harsh shadows, no yellow cast.",
+      "category": "Tracking",
+      "tags": ["receding"]
+    }
+  ]
+}
