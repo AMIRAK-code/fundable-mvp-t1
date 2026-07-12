@@ -1,0 +1,95 @@
+{
+  "tips": [
+    {
+      "id": "tip-water-temp",
+      "title": "Wash warm, rinse cool",
+      "body": "Hot water strips scalp oils and inflames dry scalps. Wash with lukewarm water and finish with a cooler rinse to help the cuticle lie flat.",
+      "category": "Basics",
+      "tags": ["dryness", "dry-scalp"]
+    },
+    {
+      "id": "tip-towel-blot",
+      "title": "Blot, don't rub",
+      "body": "Wet hair is at its weakest. Rubbing with a towel snaps strands and roughs up the cuticle — blot and squeeze instead, ideally with microfiber.",
+      "category": "Basics",
+      "tags": ["frizz", "dryness"]
+    },
+    {
+      "id": "tip-shampoo-scalp",
+      "title": "Shampoo is for the scalp",
+      "body": "Lather at the roots where oil and sweat live. The suds rinsing through the lengths is all the mid-shaft needs on most days.",
+      "category": "Basics",
+      "tags": ["maintenance"]
+    },
+    {
+      "id": "tip-derm-early",
+      "title": "See a dermatologist early",
+      "body": "If your hairline or crown is visibly changing, the earlier you talk to a dermatologist, the more options you have. Clinically proven treatments exist — timing matters more than any product.",
+      "category": "Growth",
+      "tags": ["thinning", "receding"]
+    },
+    {
+      "id": "tip-consistency",
+      "title": "Growth routines run on streaks",
+      "body": "Scalp serums and massage only show results after 8–12 weeks of near-daily use. Missing whole weeks resets the clock — build the habit first.",
+      "category": "Growth",
+      "tags": ["growth", "thinning"]
+    },
+    {
+      "id": "tip-nutrition",
+      "title": "Feed the follicle",
+      "body": "Hair is protein. Chronic low protein, iron or vitamin D shows up on your head months later. Fix the plate before buying a fourth serum.",
+      "category": "Growth",
+      "tags": ["slow-growth", "growth"]
+    },
+    {
+      "id": "tip-stress",
+      "title": "Stress sheds are real",
+      "body": "Big stress events can push hair into a resting phase and cause visible shedding 2–3 months later. It's usually temporary — manage the stress, keep the routine.",
+      "category": "Growth",
+      "tags": ["thinning"]
+    },
+    {
+      "id": "tip-hat-myth",
+      "title": "Hats don't cause baldness",
+      "body": "A normal-fitting hat won't kill follicles — that's a myth. Very tight headwear worn daily can cause traction stress at the edges, so keep it comfortable.",
+      "category": "Basics",
+      "tags": ["hats"]
+    },
+    {
+      "id": "tip-swim-prewet",
+      "title": "Pre-wet before the pool",
+      "body": "Hair soaked in tap water absorbs far less chlorinated water. Wet it at the poolside shower, and rinse again right after your swim.",
+      "category": "Lifestyle",
+      "tags": ["swimmer"]
+    },
+    {
+      "id": "tip-sweat",
+      "title": "Sweat isn't dirt — but don't sleep in it",
+      "body": "After training, a water-only rinse and a quick scalp massage clears the salt without over-washing. Save the shampoo for your scheduled wash days.",
+      "category": "Lifestyle",
+      "tags": ["active", "oiliness"]
+    },
+    {
+      "id": "tip-heat-distance",
+      "title": "Keep the dryer moving",
+      "body": "Blow-dry on medium heat, nozzle 15 cm away, always moving. Concentrated heat on one spot does more damage than the tool itself.",
+      "category": "Styling",
+      "tags": ["heat", "styling"]
+    },
+    {
+      "id": "tip-scan-consistency",
+      "title": "Scan like a scientist",
+      "body": "For hairline tracking, consistency beats quality: same mirror, same light, same distance, hair pulled back the same way. Change one variable and the trend gets noisy.",
+      "category": "Tracking",
+      "tags": ["receding", "thinning"]
+    },
+    {
+      "id": "tip-trim-schedule",
+      "title": "Trim on a schedule",
+      "body": "Every 4–6 weeks for short cuts, 8–12 for longer styles. Regular trims keep ends from splitting upward and make growth look intentional.",
+      "category": "Styling",
+      "tags": ["maintenance", "styling"]
+    }
+  ]
+}

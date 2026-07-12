@@ -1,0 +1,290 @@
+{
+  "products": [
+    {
+      "id": "shampoo-fortify-caffeine",
+      "name": "Fortify Caffeine Shampoo",
+      "brand": "Nordkap",
+      "category": "shampoo",
+      "summary": "Gentle daily-strength shampoo with caffeine and biotin, built for guys watching their hairline. Cleans without stripping.",
+      "heroIngredients": ["Caffeine", "Biotin", "Niacinamide"],
+      "tags": ["thinning", "receding", "growth", "oily-scalp", "active"],
+      "priceTier": 2,
+      "rating": 4.6
+    },
+    {
+      "id": "shampoo-balance-daily",
+      "name": "Balance Daily Shampoo",
+      "brand": "Nordkap",
+      "category": "shampoo",
+      "summary": "The no-drama default: pH-balanced, sulfate-free, works for most hair and most days.",
+      "heroIngredients": ["Panthenol", "Glycerin"],
+      "tags": ["balanced-scalp", "maintenance", "straight", "wavy"],
+      "priceTier": 1,
+      "rating": 4.4
+    },
+    {
+      "id": "shampoo-zinc-antidandruff",
+      "name": "Zinc Control Anti-Dandruff Shampoo",
+      "brand": "Bergmann Lab",
+      "category": "shampoo",
+      "summary": "Clinical-style flake control with zinc pyrithione. Use 2–3× a week and leave it on the scalp for two minutes.",
+      "heroIngredients": ["Zinc pyrithione", "Salicylic acid", "Menthol"],
+      "tags": ["dandruff", "flaky-scalp", "oiliness", "scalp-health"],
+      "priceTier": 2,
+      "rating": 4.7
+    },
+    {
+      "id": "shampoo-hydra-aloe",
+      "name": "Hydra Shampoo with Aloe",
+      "brand": "ArcticMist",
+      "category": "shampoo",
+      "summary": "Creamy, low-lather wash for dry scalps and textured hair. Zero sulfates, plenty of slip.",
+      "heroIngredients": ["Aloe vera", "Shea butter", "Coconut-derived cleansers"],
+      "tags": ["dryness", "dry-scalp", "curly", "coily"],
+      "priceTier": 2,
+      "rating": 4.5
+    },
+    {
+      "id": "shampoo-silver-balance",
+      "name": "Silver Balance Shampoo",
+      "brand": "Bergmann Lab",
+      "category": "shampoo",
+      "summary": "Violet-toned shampoo that keeps gray and silver hair bright instead of yellow. Use once or twice a week.",
+      "heroIngredients": ["Violet pigments", "Keratin"],
+      "tags": ["graying", "maintenance"],
+      "priceTier": 2,
+      "rating": 4.3
+    },
+    {
+      "id": "shampoo-clarify-weekly",
+      "name": "Clarifying Weekly Wash",
+      "brand": "Nordkap",
+      "category": "shampoo",
+      "summary": "Weekly reset that strips product buildup, sweat film and mineral residue without wrecking your scalp.",
+      "heroIngredients": ["Apple cider vinegar", "Tea tree oil"],
+      "tags": ["hard-water", "styling", "oiliness", "active"],
+      "priceTier": 1,
+      "rating": 4.4
+    },
+    {
+      "id": "shampoo-swim-chelating",
+      "name": "Swim Rescue Chelating Shampoo",
+      "brand": "ArcticMist",
+      "category": "shampoo",
+      "summary": "Chelating formula that pulls chlorine and copper out of hair after pool sessions. A must for regular swimmers.",
+      "heroIngredients": ["EDTA", "Vitamin C", "Aloe vera"],
+      "tags": ["swimmer", "hard-water", "dryness"],
+      "priceTier": 2,
+      "rating": 4.6
+    },
+    {
+      "id": "conditioner-featherweight",
+      "name": "Featherweight Conditioner",
+      "brand": "ArcticMist",
+      "category": "conditioner",
+      "summary": "Light rinse-out conditioner that softens without weighing short styles down or greasing the roots.",
+      "heroIngredients": ["Panthenol", "Rice protein"],
+      "tags": ["straight", "oily-scalp", "short", "maintenance"],
+      "priceTier": 1,
+      "rating": 4.3
+    },
+    {
+      "id": "conditioner-deep-moisture",
+      "name": "Deep Moisture Conditioner",
+      "brand": "ArcticMist",
+      "category": "conditioner",
+      "summary": "Rich cream conditioner for dry, curly or long hair. Detangles and seals the cuticle in one pass.",
+      "heroIngredients": ["Shea butter", "Argan oil", "Ceramides"],
+      "tags": ["dryness", "curly", "coily", "frizz", "long"],
+      "priceTier": 2,
+      "rating": 4.7
+    },
+    {
+      "id": "serum-peppermint-tonic",
+      "name": "Peppermint Scalp Tonic",
+      "brand": "Bergmann Lab",
+      "category": "serum",
+      "summary": "Tingly daily tonic that stimulates the scalp and keeps follicles clear. Great companion to a massage routine.",
+      "heroIngredients": ["Peppermint oil", "Rosemary extract", "Caffeine"],
+      "tags": ["thinning", "growth", "scalp-health", "slow-growth"],
+      "priceTier": 2,
+      "rating": 4.5
+    },
+    {
+      "id": "serum-redensify",
+      "name": "Redensify Scalp Serum",
+      "brand": "TrichoWorks",
+      "category": "serum",
+      "summary": "Leave-in serum targeting the hairline and crown with caffeine and plant peptides. For clinically proven actives like minoxidil, talk to a dermatologist.",
+      "heroIngredients": ["Caffeine", "Redensyl-type peptides", "Niacinamide"],
+      "tags": ["thinning", "receding", "growth"],
+      "priceTier": 3,
+      "rating": 4.4
+    },
+    {
+      "id": "serum-night-recovery",
+      "name": "Night Recovery Scalp Serum",
+      "brand": "TrichoWorks",
+      "category": "serum",
+      "summary": "Overnight serum that calms tight, flaky scalps and rebuilds the moisture barrier while you sleep.",
+      "heroIngredients": ["Ceramides", "Oat extract", "Hyaluronic acid"],
+      "tags": ["scalp-health", "dry-scalp", "flaky-scalp", "dryness"],
+      "priceTier": 3,
+      "rating": 4.6
+    },
+    {
+      "id": "styling-sea-salt",
+      "name": "Sea Salt Texture Spray",
+      "brand": "Harbor & Oak",
+      "category": "styling",
+      "summary": "Instant beach texture and volume for straight or wavy hair. Spray on damp hair, rough-dry, done.",
+      "heroIngredients": ["Sea salt", "Kelp extract"],
+      "tags": ["styling", "straight", "wavy", "medium"],
+      "priceTier": 1,
+      "rating": 4.5
+    },
+    {
+      "id": "styling-matte-clay",
+      "name": "Matte Clay",
+      "brand": "Harbor & Oak",
+      "category": "styling",
+      "summary": "Strong hold, zero shine. The workhorse for short and medium cuts that need shape all day.",
+      "heroIngredients": ["Kaolin clay", "Beeswax"],
+      "tags": ["styling", "short", "medium"],
+      "priceTier": 2,
+      "rating": 4.8
+    },
+    {
+      "id": "styling-cream-pomade",
+      "name": "Flexible Cream Pomade",
+      "brand": "Harbor & Oak",
+      "category": "styling",
+      "summary": "Medium hold with natural finish; re-stylable through the day. Plays nicely with waves and curls.",
+      "heroIngredients": ["Lanolin", "Jojoba oil"],
+      "tags": ["styling", "curly", "wavy", "frizz"],
+      "priceTier": 2,
+      "rating": 4.6
+    },
+    {
+      "id": "styling-heat-shield",
+      "name": "Heat Shield Spray",
+      "brand": "Harbor & Oak",
+      "category": "styling",
+      "summary": "Thermal protectant up to 230 °C for blow-drying and hot tools. Weightless, no crunch.",
+      "heroIngredients": ["Hydrolyzed wheat protein", "Vitamin E"],
+      "tags": ["heat", "styling", "dryness"],
+      "priceTier": 2,
+      "rating": 4.5
+    },
+    {
+      "id": "oil-argan-jojoba",
+      "name": "Argan & Jojoba Hair Oil",
+      "brand": "ArcticMist",
+      "category": "oil",
+      "summary": "Three drops tame frizz, add shine and seal ends. Best friend of long, curly and coily hair.",
+      "heroIngredients": ["Argan oil", "Jojoba oil", "Squalane"],
+      "tags": ["dryness", "frizz", "curly", "coily", "long"],
+      "priceTier": 2,
+      "rating": 4.7
+    },
+    {
+      "id": "oil-rosemary-strength",
+      "name": "Rosemary Strength Oil",
+      "brand": "TrichoWorks",
+      "category": "oil",
+      "summary": "Pre-wash scalp oil built around rosemary — a folk favorite for growth support. Massage in, leave 30 minutes, wash out.",
+      "heroIngredients": ["Rosemary oil", "Pumpkin seed oil", "Castor oil"],
+      "tags": ["thinning", "growth", "slow-growth", "dry-scalp"],
+      "priceTier": 2,
+      "rating": 4.4
+    },
+    {
+      "id": "treatment-scalp-scrub",
+      "name": "Cooling Scalp Exfoliant Scrub",
+      "brand": "Bergmann Lab",
+      "category": "treatment",
+      "summary": "Weekly sugar-based scrub that lifts flakes, buildup and dead skin so treatments actually reach the scalp.",
+      "heroIngredients": ["Sugar crystals", "Salicylic acid", "Menthol"],
+      "tags": ["flaky-scalp", "dandruff", "oily-scalp", "scalp-health"],
+      "priceTier": 2,
+      "rating": 4.6
+    },
+    {
+      "id": "treatment-protein-mask",
+      "name": "Protein Repair Mask",
+      "brand": "ArcticMist",
+      "category": "treatment",
+      "summary": "Ten-minute weekly mask that rebuilds heat- and sun-damaged hair with hydrolyzed proteins.",
+      "heroIngredients": ["Hydrolyzed keratin", "Shea butter", "Ceramides"],
+      "tags": ["dryness", "heat", "frizz", "long"],
+      "priceTier": 2,
+      "rating": 4.7
+    },
+    {
+      "id": "treatment-scalp-spf",
+      "name": "Invisible Scalp SPF 30 Mist",
+      "brand": "Bergmann Lab",
+      "category": "treatment",
+      "summary": "Non-greasy sunscreen mist for exposed scalps, part lines and thinning crowns. Sun protection is hair-loss care too.",
+      "heroIngredients": ["UVA/UVB filters", "Vitamin E"],
+      "tags": ["receding", "thinning", "buzz", "maintenance"],
+      "priceTier": 2,
+      "rating": 4.3
+    },
+    {
+      "id": "supplement-biotin-complex",
+      "name": "Biotin+ Complex",
+      "brand": "VitaForm",
+      "category": "supplement",
+      "summary": "Daily gummy with biotin, zinc and selenium. Supplements only help if your diet is short — food first.",
+      "heroIngredients": ["Biotin", "Zinc", "Selenium"],
+      "tags": ["slow-growth", "thinning", "growth"],
+      "priceTier": 2,
+      "rating": 4.2
+    },
+    {
+      "id": "supplement-omega-zinc",
+      "name": "Omega & Zinc Men's Formula",
+      "brand": "VitaForm",
+      "category": "supplement",
+      "summary": "Omega-3s plus zinc and vitamin D for overall hair and scalp support, especially in winter months.",
+      "heroIngredients": ["Omega-3", "Zinc", "Vitamin D3"],
+      "tags": ["maintenance", "growth", "graying"],
+      "priceTier": 2,
+      "rating": 4.1
+    },
+    {
+      "id": "tool-scalp-brush",
+      "name": "Silicone Scalp Massage Brush",
+      "brand": "Forma",
+      "category": "tool",
+      "summary": "Firm silicone bristles for the daily 3-minute massage your hairline routine calls for. Use dry or in the shower.",
+      "heroIngredients": ["Medical-grade silicone"],
+      "tags": ["growth", "thinning", "scalp-health", "active"],
+      "priceTier": 1,
+      "rating": 4.8
+    },
+    {
+      "id": "tool-microfiber-towel",
+      "name": "Microfiber Hair Towel",
+      "brand": "Forma",
+      "category": "tool",
+      "summary": "Blots water fast with far less friction than terry cloth — less frizz, less breakage, less towel damage.",
+      "heroIngredients": ["Microfiber weave"],
+      "tags": ["frizz", "curly", "long", "dryness"],
+      "priceTier": 1,
+      "rating": 4.6
+    },
+    {
+      "id": "tool-wide-tooth-comb",
+      "name": "Wide-Tooth Detangling Comb",
+      "brand": "Forma",
+      "category": "tool",
+      "summary": "Seamless wide-tooth comb for detangling curls and coils damp, with conditioner in. Never brush curls dry.",
+      "heroIngredients": ["Cellulose acetate"],
+      "tags": ["curly", "coily", "frizz"],
+      "priceTier": 1,
+      "rating": 4.7
+    }
+  ]
+}

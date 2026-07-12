@@ -1,5 +1,8 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+> **iOS app:** the native SwiftUI men's hair-care app (MANE) lives in
+> [`ios/`](./ios/README.md) — open `ios/Mane.xcodeproj` in Xcode 16+ and run.
+
 ## Getting Started
 
 First, run the development server:
