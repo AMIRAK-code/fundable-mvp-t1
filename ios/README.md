@@ -6,6 +6,32 @@ data sources, and a **hairline scanner** that analyzes 3–4 photos on device to
 estimate whether your hairline is receding, stable or restoring — plus a hair
 density index — and tracks both over time.
 
+## Try it without a Mac — the web mirror
+
+`ios/web-mirror/index.html` is a single self-contained page that mirrors the app
+in a browser. Open the file directly (no server, no build, no dependencies):
+
+```bash
+open ios/web-mirror/index.html
+```
+
+It is not a set of screenshots — the routine engine, product scoring, Otsu
+density math, hairline column-walk and trend verdicts are ported line for line
+from the Swift sources, and the real `products.json` / `tips.json` ship inside
+it. You can complete onboarding, tick off a day's routine, run an actual scan on
+your own photos and read the resulting indexes and trends. Three substitutions
+are unavoidable in a browser, and the page labels each one:
+
+| In the app | In the mirror |
+|---|---|
+| Vision face + eyebrow landmarks | a face frame and brow line you position by hand |
+| `UIImagePickerController` camera | file picker |
+| `UserDefaults` + on-disk scan store | `localStorage`, photos kept as thumbnails |
+
+The scan results add one thing the app doesn't show: an overlay drawing the face
+frame, skin-reference band, detected hairline and density region, so you can see
+what the algorithm actually measured.
+
 ## Open in Xcode
 
 ```bash
@@ -120,6 +146,9 @@ ios/Mane/
 │   ├── Settings/            Themes, profile, data sources, scan data, about
 │   └── Components/          Cards, chips, rings, badges, camera picker
 └── Resources/               products.json, tips.json
+
+ios/web-mirror/index.html    Browser mirror of the app (see above)
+ios/sample-remote-catalog.json  Sample payload for the remote "community feed"
 ```
 
 - Pure SwiftUI, MVVM-ish with one `AppModel` hub; no third-party code.
