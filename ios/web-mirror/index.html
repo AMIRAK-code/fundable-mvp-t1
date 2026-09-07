@@ -1,0 +1,2798 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; background: #FAFAF8; font: 14px system-ui, -apple-system, sans-serif; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+<title>MANE Web Mirror</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Nunito:wght@700;800&display=swap">
+
+<style>
+/* ============================================================
+   BENCH — the shell around the device.
+   Dark-first: bare :root is the dark set; light is redefined in
+   the two guarded blocks so both the OS setting and an explicit
+   viewer choice resolve correctly.
+   ============================================================ */
+:root {
+  --bench: #0B0E13;
+  --slab: #141922;
+  --slab-2: #1B2230;
+  --line: #273143;
+  --line-soft: #1E2634;
+  --chalk: #C9D2E0;
+  --mute: #7B8798;
+  --signal: #4FA3FF;
+  --signal-soft: rgba(79, 163, 255, 0.14);
+  --ok: #3DDC97;
+  --warn: #FFC857;
+  --bad: #FF6B6B;
+  --device-shell: #05070B;
+  --device-edge: #2C3542;
+  --bench-shadow: 0 40px 90px -24px rgba(0, 0, 0, 0.85);
+  --tick: rgba(201, 210, 224, 0.22);
+
+  --sans: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --app-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --app-round: ui-rounded, "SF Pro Rounded", "Nunito", -apple-system, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bench: #EAEEF4;
+    --slab: #FFFFFF;
+    --slab-2: #F3F6FA;
+    --line: #D7DEEA;
+    --line-soft: #E4EAF2;
+    --chalk: #131A25;
+    --mute: #5B6779;
+    --signal: #0B5FFF;
+    --signal-soft: rgba(11, 95, 255, 0.10);
+    --ok: #12B76A;
+    --warn: #B54708;
+    --bad: #D92D20;
+    --device-shell: #C3CBD8;
+    --device-edge: #9BA6B8;
+    --bench-shadow: 0 30px 70px -28px rgba(20, 30, 48, 0.40);
+    --tick: rgba(19, 26, 37, 0.20);
+  }
+}
+:root[data-theme="light"] {
+  --bench: #EAEEF4;
+  --slab: #FFFFFF;
+  --slab-2: #F3F6FA;
+  --line: #D7DEEA;
+  --line-soft: #E4EAF2;
+  --chalk: #131A25;
+  --mute: #5B6779;
+  --signal: #0B5FFF;
+  --signal-soft: rgba(11, 95, 255, 0.10);
+  --ok: #12B76A;
+  --warn: #B54708;
+  --bad: #D92D20;
+  --device-shell: #C3CBD8;
+  --device-edge: #9BA6B8;
+  --bench-shadow: 0 30px 70px -28px rgba(20, 30, 48, 0.40);
+  --tick: rgba(19, 26, 37, 0.20);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bench);
+  color: var(--chalk);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; border-radius: 4px; }
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+/* ---------- Header ---------- */
+.bench-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 26px clamp(16px, 4vw, 44px) 20px;
+  border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.brand-mark {
+  font-size: clamp(26px, 4vw, 34px);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  margin: 0;
+  line-height: 1;
+}
+.brand-note { max-width: 68ch; margin: 8px 0 0; color: var(--mute); font-size: 13.5px; }
+
+.theme-switch { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.theme-switch .eyebrow { margin-right: 4px; }
+.swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 13px 7px 8px;
+  background: var(--slab);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.swatch:hover { border-color: var(--signal); }
+.swatch[aria-pressed="true"] { border-color: var(--signal); background: var(--signal-soft); }
+.swatch i {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* ---------- Bench grid ---------- */
+.bench-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 384px;
+  gap: clamp(20px, 3vw, 40px);
+  align-items: start;
+  padding: clamp(20px, 3.5vw, 40px) clamp(16px, 4vw, 44px) 60px;
+}
+@media (max-width: 1060px) {
+  .bench-body { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- Device stage ---------- */
+.stage {
+  display: grid;
+  grid-template-columns: 66px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+/* Keep the device in view while the panel column scrolls past it. */
+@media (min-width: 1061px) {
+  .stage { position: sticky; top: 16px; }
+}
+@media (max-width: 640px) { .stage { grid-template-columns: minmax(0, 1fr); } .gauge { display: none; } }
+
+/* The rail is a live 0–100 scale carrying the latest scan's two indexes,
+   not decoration — it reads against the device beside it. */
+.gauge { display: block; }
+.gauge text { font-family: var(--mono); fill: var(--mute); }
+.gauge .major { fill: var(--chalk); }
+
+.stage-inner { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+
+.device-wrap {
+  transform: scale(var(--scale, 1));
+  transform-origin: top center;
+  margin-bottom: calc((var(--scale, 1) - 1) * 852px);
+}
+
+.device {
+  width: 393px;
+  height: 852px;
+  background: var(--device-shell);
+  border: 1px solid var(--device-edge);
+  border-radius: 56px;
+  padding: 11px;
+  box-shadow: var(--bench-shadow);
+  position: relative;
+}
+.device::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+/* ---------- App screen (mirrors Swift Palette; identical in every host theme) ---------- */
+.screen {
+  position: relative;
+  width: 371px;
+  height: 830px;
+  border-radius: 45px;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--app-sans);
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+}
+
+.status-bar {
+  height: 50px;
+  flex: 0 0 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 30px 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--app-round);
+  color: var(--text);
+  position: relative;
+  z-index: 3;
+}
+.status-bar .glyphs { display: flex; align-items: center; gap: 5px; }
+.island {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 108px;
+  height: 30px;
+  border-radius: 16px;
+  background: #000;
+  z-index: 4;
+}
+
+/* SwiftUI puts toolbar items in their own row above a large navigation title. */
+.nav-bar {
+  flex: 0 0 auto;
+  padding: 0 20px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-bar h1 {
+  margin: 0;
+  font-family: var(--app-round);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.nav-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 26px;
+}
+.nav-bar.compact {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 38px;
+}
+.nav-bar.compact h1 { font-size: 16px; font-weight: 600; }
+.nav-btn { white-space: nowrap; }
+.nav-btn {
+  background: none;
+  border: 0;
+  padding: 4px;
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 20px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  scrollbar-width: thin;
+}
+.scroll::-webkit-scrollbar { width: 4px; }
+.scroll::-webkit-scrollbar-thumb { background: var(--text2); border-radius: 4px; opacity: 0.4; }
+
+.tab-bar {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid color-mix(in srgb, var(--text2) 24%, transparent);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  backdrop-filter: blur(14px);
+  padding: 7px 0 24px;
+}
+.tab {
+  background: none;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 0;
+  color: var(--text2);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--app-round);
+}
+.tab[aria-selected="true"] { color: var(--accent); }
+.tab svg { width: 25px; height: 25px; }
+
+/* ---------- App primitives ---------- */
+.card {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: var(--card-shadow, none);
+}
+.hero {
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--hero1), var(--hero2));
+  color: #fff;
+  padding: 20px;
+}
+.sec-title {
+  font-family: var(--app-round);
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.sec-sub { margin: 2px 0 0; font-size: 14px; color: var(--text2); }
+.row { display: flex; gap: 12px; align-items: center; }
+.row-top { display: flex; gap: 12px; align-items: flex-start; }
+.col { display: flex; flex-direction: column; }
+.gap6 { gap: 6px; } .gap8 { gap: 8px; } .gap10 { gap: 10px; } .gap12 { gap: 12px; } .gap14 { gap: 14px; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.t-primary { color: var(--text); }
+.t-second { color: var(--text2); }
+.t-accent { color: var(--accent); }
+.f-cap { font-size: 12px; }
+.f-cap2 { font-size: 11px; }
+.f-foot { font-size: 13px; }
+.f-sub { font-size: 15px; }
+.f-head { font-size: 17px; font-weight: 600; }
+.w-semi { font-weight: 600; }
+.w-bold { font-weight: 700; }
+.round { font-family: var(--app-round); }
+.center { text-align: center; }
+.strike { text-decoration: line-through; }
+
+.btn-primary, .btn-secondary {
+  border: 0;
+  width: 100%;
+  border-radius: 999px;
+  padding: 15px 18px;
+  font-family: var(--app-round);
+  font-size: 17px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.12s, transform 0.12s;
+}
+.btn-primary { background: linear-gradient(to right, var(--accent), color-mix(in srgb, var(--accent) 74%, transparent)); color: #fff; }
+.btn-secondary { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.btn-danger { background: color-mix(in srgb, var(--neg) 12%, transparent); color: var(--neg); }
+.btn-primary:active, .btn-secondary:active { transform: scale(0.98); opacity: 0.86; }
+.btn-primary[disabled] { opacity: 0.45; }
+.btn-row { display: flex; gap: 10px; }
+
+.chip {
+  border: 1px solid color-mix(in srgb, var(--text2) 25%, transparent);
+  background: var(--surface2);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-family: var(--app-round);
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chip[aria-pressed="true"] { background: var(--accent); border-color: transparent; color: #fff; }
+.chip svg { width: 14px; height: 14px; }
+.chips { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.chips.free { display: flex; flex-wrap: wrap; }
+.chips-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin: 0 -20px; padding-left: 20px; padding-right: 20px; }
+.chips-scroll .chip { flex: 0 0 auto; }
+
+.pill {
+  background: var(--surface2);
+  color: var(--text2);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.badge svg { width: 12px; height: 12px; }
+
+.select-card {
+  width: 100%;
+  text-align: left;
+  border: 2px solid transparent;
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.select-card[aria-pressed="true"] { border-color: var(--accent); }
+.select-card svg.mark { width: 22px; height: 22px; flex: 0 0 auto; }
+
+.field {
+  width: 100%;
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 14px;
+  font-family: var(--app-sans);
+  font-size: 15px;
+}
+.field.sunk { background: var(--surface2); border-radius: 12px; padding: 12px; }
+.field::placeholder { color: var(--text2); }
+
+.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 0; }
+.switch {
+  width: 51px;
+  height: 31px;
+  border-radius: 999px;
+  border: 0;
+  background: color-mix(in srgb, var(--text2) 35%, transparent);
+  position: relative;
+  flex: 0 0 auto;
+  transition: background 0.18s;
+}
+.switch[aria-pressed="true"] { background: var(--accent); }
+.switch span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.18s;
+}
+.switch[aria-pressed="true"] span { transform: translateX(20px); }
+
+.slider { width: 100%; accent-color: var(--accent); }
+
+.progress-track { height: 6px; border-radius: 999px; background: var(--surface2); overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 999px; background: var(--accent); transition: width 0.3s ease; }
+
+.ring-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.ring { position: relative; width: 96px; height: 96px; }
+.ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+.ring b {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--app-round);
+  font-size: 27px;
+  font-weight: 700;
+}
+.ring-label { font-size: 11px; font-weight: 600; color: var(--text2); text-align: center; max-width: 100px; }
+
+.dots { display: flex; gap: 8px; }
+.dots i { flex: 1 1 0; height: 6px; border-radius: 999px; background: var(--surface2); }
+
+.shot-frame {
+  height: 300px;
+  border-radius: 20px;
+  background: var(--surface2);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 20px;
+  overflow: hidden;
+  position: relative;
+}
+.shot-frame img { width: 100%; height: 100%; object-fit: cover; }
+.guide-stage { position: relative; height: 300px; border-radius: 20px; overflow: hidden; background: #000; touch-action: none; }
+.guide-stage img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+.guide-box {
+  position: absolute;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.42);
+  cursor: move;
+}
+.guide-box .handle {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  right: -11px;
+  bottom: -11px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #fff;
+  cursor: nwse-resize;
+}
+.guide-brow {
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  height: 16px;
+  margin-top: -8px;
+  cursor: ns-resize;
+  display: flex;
+  align-items: center;
+}
+.guide-brow::before { content: ""; flex: 1 1 auto; height: 2px; background: var(--caution); }
+.guide-brow em {
+  position: absolute;
+  right: 4px;
+  top: -16px;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--caution);
+  letter-spacing: 0.08em;
+}
+.note-chip {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 7px;
+  background: color-mix(in srgb, var(--caution) 14%, transparent);
+  color: var(--caution);
+  border-radius: 10px;
+  padding: 9px 11px;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: left;
+}
+.note-chip svg { width: 13px; height: 13px; flex: 0 0 auto; margin-top: 1px; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.shelf { display: flex; gap: 12px; overflow-x: auto; margin: 0 -20px; padding: 2px 20px 6px; }
+.shelf-card {
+  flex: 0 0 auto;
+  width: 170px;
+  height: 172px;
+  background: var(--surface);
+  border-radius: 18px;
+  border: 0;
+  padding: 14px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.list-card {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--surface2);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+.thumb.lg { width: 64px; height: 64px; border-radius: 16px; }
+.thumb svg { width: 22px; height: 22px; }
+.thumb.lg svg { width: 30px; height: 30px; }
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-top-color: var(--accent);
+  animation: spin 0.85s linear infinite;
+  margin: 0 auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: rgba(0, 0, 0, 0.42);
+}
+.sheet-body {
+  background: var(--bg);
+  border-radius: 22px 22px 0 0;
+  max-height: 76%;
+  overflow-y: auto;
+  padding: 12px 24px 30px;
+  animation: rise 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sheet-grip { width: 40px; height: 5px; border-radius: 999px; background: var(--text2); opacity: 0.4; margin: 0 auto 14px; }
+@keyframes rise { from { transform: translateY(22px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+
+.full-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  animation: rise 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chart { width: 100%; height: 200px; display: block; overflow: visible; }
+.seg {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 2px;
+  background: var(--surface2);
+  border-radius: 9px;
+  padding: 2px;
+}
+.seg button {
+  border: 0;
+  background: none;
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.seg button[aria-pressed="true"] { background: var(--surface); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18); }
+
+.metric-pill { background: var(--surface2); border-radius: 8px; padding: 6px 10px; }
+.divider { height: 1px; background: color-mix(in srgb, var(--text2) 22%, transparent); }
+.overlay-canvas { width: 100%; border-radius: 16px; display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ---------- Stage caption ---------- */
+.stage-caption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--mute);
+}
+.stage-caption code {
+  background: var(--slab);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 3px 7px;
+  color: var(--chalk);
+}
+
+/* ---------- Panels ---------- */
+.panels { display: flex; flex-direction: column; gap: 16px; }
+.panel {
+  background: var(--slab);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--slab-2);
+}
+.panel > header h2 { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
+.panel-in { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+.jump { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.jump button, .action {
+  background: var(--slab-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 9px 11px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  transition: border-color 0.14s, background 0.14s;
+}
+.jump button:hover, .action:hover { border-color: var(--signal); }
+.jump button[aria-pressed="true"] { background: var(--signal-soft); border-color: var(--signal); color: var(--signal); }
+.action { width: 100%; display: flex; align-items: center; gap: 9px; }
+.action.wide { justify-content: flex-start; }
+
+.readout { font-family: var(--mono); font-size: 11.5px; display: flex; flex-direction: column; gap: 7px; }
+.readout div { display: flex; justify-content: space-between; gap: 12px; }
+.readout dt, .readout .k { color: var(--mute); letter-spacing: 0.04em; }
+.readout .v { color: var(--chalk); text-align: right; font-variant-numeric: tabular-nums; }
+.readout .v.on { color: var(--ok); }
+.readout .v.off { color: var(--mute); }
+
+.parity { display: flex; flex-direction: column; gap: 11px; margin: 0; padding: 0; list-style: none; font-size: 12.5px; }
+.parity li { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 10px; align-items: start; }
+.parity .tag {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 0;
+  text-align: right;
+}
+.parity .tag.same { color: var(--ok); }
+.parity .tag.sub { color: var(--warn); }
+.parity p { margin: 0; color: var(--mute); line-height: 1.45; }
+.parity p b { color: var(--chalk); font-weight: 600; }
+.parity code {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--chalk);
+  background: var(--slab-2);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.foot {
+  padding: 0 clamp(16px, 4vw, 44px) 50px;
+  color: var(--mute);
+  font-size: 12px;
+  max-width: 78ch;
+}
+.foot a { color: var(--signal); }
+</style>
+</head>
+<body>
+<header class="bench-head">
+  <div>
+    <div class="brand">
+      <h1 class="brand-mark">MANE</h1>
+      <span class="eyebrow">iOS&nbsp;·&nbsp;web mirror</span>
+    </div>
+    <p class="brand-note">
+      The SwiftUI app from <code style="font-family:var(--mono);font-size:12px">ios/Mane.xcodeproj</code>, running in a browser.
+      The routine engine, product scoring, hairline&nbsp;/&nbsp;density math and trend verdicts are ported line for line — not mocked.
+    </p>
+  </div>
+  <div class="theme-switch" id="theme-switch">
+    <span class="eyebrow">App theme</span>
+  </div>
+</header>
+
+<div class="bench-body">
+  <div class="stage">
+    <svg class="gauge" id="gauge" role="img" aria-label="Scan index scale"></svg>
+    <div class="stage-inner">
+      <div class="device-wrap" id="device-wrap">
+        <div class="device">
+          <div class="screen" id="screen"></div>
+        </div>
+      </div>
+      <p class="stage-caption" id="stage-caption"></p>
+    </div>
+  </div>
+
+  <div class="panels">
+    <section class="panel">
+      <header><h2>Screens</h2><span class="eyebrow" id="flow-state">—</span></header>
+      <div class="panel-in">
+        <div class="jump" id="jump"></div>
+        <button class="action" data-shell="restart-onboarding">Restart onboarding</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <header><h2>Instrument readout</h2></header>
+      <div class="panel-in">
+        <div class="readout" id="readout"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <header><h2>Test data</h2></header>
+      <div class="panel-in">
+        <button class="action" data-shell="demo-profile">Fill a sample profile</button>
+        <button class="action" data-shell="demo-scans">Load 4-scan history</button>
+        <button class="action" data-shell="toggle-feed" id="feed-btn">Community feed: off</button>
+        <button class="action" data-shell="wipe">Wipe all mirror data</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <header><h2>Parity with Swift</h2></header>
+      <div class="panel-in">
+        <ul class="parity">
+          <li><span class="tag same">exact</span><p><b>Routine engine.</b> Wash math, step set, weekday spread and every string ported from <code>RoutineEngine.swift</code>.</p></li>
+          <li><span class="tag same">exact</span><p><b>Product scoring.</b> Same tag weights (concern 3.0, scalp 2.5, goal 2.0, lifestyle 1.5), same <code>rating × 0.3</code> tiebreak.</p></li>
+          <li><span class="tag same">exact</span><p><b>Density index.</b> Otsu threshold, between-class separation, dark coverage and edge-texture blend from <code>HairlineAnalyzer.swift</code>.</p></li>
+          <li><span class="tag same">exact</span><p><b>Hairline walk.</b> Skin reference band, per-column upward scan, distance&nbsp;&gt;&nbsp;110 over 4&nbsp;px, 35% coverage floor, IQR confidence penalty.</p></li>
+          <li><span class="tag same">exact</span><p><b>Trend verdicts.</b> Baseline of up to 3 prior scans, ±4% hairline / ±6% density bands, same copy.</p></li>
+          <li><span class="tag same">exact</span><p><b>Catalog.</b> The real <code>products.json</code> (26) and <code>tips.json</code> (13), plus the sample remote feed.</p></li>
+          <li><span class="tag sub">swapped</span><p><b>Face detection.</b> iOS uses Vision landmarks; the browser has none, so you place the face frame and brow line by hand. The measurement below it is unchanged.</p></li>
+          <li><span class="tag sub">swapped</span><p><b>Capture.</b> File picker instead of <code>UIImagePickerController</code> — the camera needs the device.</p></li>
+          <li><span class="tag sub">swapped</span><p><b>Storage.</b> <code>localStorage</code> stands in for <code>UserDefaults</code> and the on-disk scan store; photos are kept as thumbnails only.</p></li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</div>
+
+<p class="foot">
+  Everything here runs in your browser — no photo, measurement or profile leaves this page, matching the app's on-device promise.
+  MANE is a grooming companion, not a medical device: hairline and density figures are heuristics, sensitive to lighting and angle,
+  and useful for their trend across consistent scans rather than as absolute readings. For medical concerns about hair loss, see a dermatologist.
+</p>
+
+<script>
+"use strict";
+
+/* ============================================================
+   1. ICONS — SF Symbols have no web equivalent, so this is a
+   hand-built stand-in set. Each Swift symbol name maps to the
+   nearest glyph here.
+   ============================================================ */
+const GLYPH = {
+  checklist: '<path d="M4 7h2l1.5 1.5L11 5"/><path d="M4 17h2l1.5 1.5L11 14"/><path d="M14 7h6"/><path d="M14 17h6"/>',
+  meter: '<circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16" stroke-opacity=".4"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>',
+  sparkles: '<path d="M11 3l1.5 4.1L16.6 8.6 12.5 10 11 14.1 9.5 10 5.4 8.6 9.5 7.1z"/><path d="M17.6 14.6l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>',
+  gear: '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M4.5 7.5l2.2 1.3M17.3 15.2l2.2 1.3M4.5 16.5l2.2-1.3M17.3 8.8l2.2-1.3M2.8 12h2.6M18.6 12h2.6"/>',
+  sun: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M3.6 12h2.4M18 12h2.4M6.1 6.1l1.7 1.7M16.2 16.2l1.7 1.7M6.1 17.9l1.7-1.7M16.2 7.8l1.7-1.7"/>',
+  moon: '<path d="M20 14.6A8.3 8.3 0 019.3 4 8.6 8.6 0 1020 14.6z"/><path d="M16.4 4.2l.5 1.4 1.4.5-1.4.5-.5 1.4-.5-1.4-1.4-.5 1.4-.5z"/>',
+  flame: '<path d="M12 21c3.6 0 6-2.3 6-5.4 0-4.4-4.3-6.3-4.3-9.6 0 0-1.4 1.5-1.4 3.6 0 1.2-.8 2-1.7 2-1 0-1.6-.8-1.6-1.9C7.2 11 6 12.7 6 15.6 6 18.7 8.4 21 12 21z"/>',
+  drop: '<path d="M12 3.5s5.5 6 5.5 9.6A5.5 5.5 0 116.5 13C6.5 9.5 12 3.5 12 3.5z"/>',
+  shower: '<path d="M6 21V7a3 3 0 013-3h1"/><path d="M10 4h7"/><ellipse cx="16" cy="8.4" rx="4.6" ry="1.6"/><path d="M13 13v1.6M16 12.4V14M19 13v1.6M14.5 17v1.4M17.5 17v1.4"/>',
+  comb: '<rect x="3" y="7" width="18" height="4" rx="1.4"/><path d="M5.5 11v6M9 11v6M12.5 11v6M16 11v6M19 11v6"/>',
+  question: '<circle cx="12" cy="12" r="8.4"/><path d="M9.7 9.4a2.4 2.4 0 114.3 1.5c-.7.9-2 1.1-2 2.6"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>',
+  bulb: '<path d="M12 3a6 6 0 00-3.4 10.9c.5.4.9 1 .9 1.7v.6h5v-.6c0-.7.4-1.3.9-1.7A6 6 0 0012 3z"/><path d="M9.9 19h4.2M10.6 21.3h2.8"/>',
+  chevL: '<path d="M14.5 5.5L8 12l6.5 6.5"/>',
+  chevR: '<path d="M9.5 5.5L16 12l-6.5 6.5"/>',
+  circle: '<circle cx="12" cy="12" r="8.4"/>',
+  checkCircle: '<circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"/><path d="M7.9 12.4l2.7 2.7 5.5-5.9" stroke="#fff" stroke-width="2"/>',
+  star: '<path d="M12 3.6l2.6 5.5 5.9.8-4.3 4.2 1 5.9-5.2-2.9-5.2 2.9 1-5.9L3.5 9.9l5.9-.8z" fill="currentColor" stroke="none"/>',
+  trash: '<path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0110.7 4h2.6a1.2 1.2 0 011.2 1.2V7"/><path d="M6.5 7l.9 12.1a1.4 1.4 0 001.4 1.3h6.4a1.4 1.4 0 001.4-1.3L17.5 7"/>',
+  refresh: '<path d="M4.2 12a7.8 7.8 0 0113.3-5.5l2.3 2.2"/><path d="M20 4.4v4.6h-4.6"/><path d="M19.8 12a7.8 7.8 0 01-13.3 5.5L4.2 15.3"/><path d="M4 19.6V15h4.6"/>',
+  photo: '<rect x="3.5" y="5" width="17" height="14" rx="2.4"/><circle cx="8.6" cy="9.8" r="1.4"/><path d="M4.2 16.6l4.4-3.8 3.3 2.7 3-2.6 4.5 3.9"/>',
+  camera: '<path d="M3.5 8.6a2 2 0 012-2h1.7l1.1-1.7h5.4l1.1 1.7h3.7a2 2 0 012 2v8.2a2 2 0 01-2 2h-13a2 2 0 01-2-2z"/><circle cx="12" cy="13" r="3.4"/>',
+  plusCircle: '<circle cx="12" cy="12" r="8.6"/><path d="M12 8.4v7.2M8.4 12h7.2"/>',
+  personSquare: '<rect x="3.6" y="3.6" width="16.8" height="16.8" rx="3.4"/><circle cx="12" cy="10.2" r="2.6"/><path d="M7.4 17.6a4.9 4.9 0 019.2 0"/>',
+  crown: '<circle cx="12" cy="12" r="7.6"/><path d="M12 4.4v15.2M4.4 12h15.2" stroke-opacity=".45"/><path d="M8.6 8.6l6.8 6.8M15.4 8.6l-6.8 6.8" stroke-opacity=".45"/>',
+  waves: '<path d="M3.2 9.5c1.6-1.8 3.2-1.8 4.8 0s3.2 1.8 4.8 0 3.2-1.8 4.8 0 2 .9 3.2 0"/><path d="M3.2 15c1.6-1.8 3.2-1.8 4.8 0s3.2 1.8 4.8 0 3.2-1.8 4.8 0 2 .9 3.2 0"/>',
+  curly: '<path d="M4.6 7.6c1.2-2.6 2.6-2.6 3.8 0s2.6 2.6 3.8 0 2.6-2.6 3.8 0 2 1.4 3 .4"/><path d="M4.6 14.4c1.2-2.6 2.6-2.6 3.8 0s2.6 2.6 3.8 0 2.6-2.6 3.8 0 2 1.4 3 .4"/>',
+  coily: '<path d="M8.4 3.8c2.7 0 2.7 2.9 0 2.9s-2.7 2.9 0 2.9 2.7 2.9 0 2.9-2.7 2.9 0 2.9 2.7 2.9 0 2.9"/><path d="M15.6 3.8c2.7 0 2.7 2.9 0 2.9s-2.7 2.9 0 2.9 2.7 2.9 0 2.9-2.7 2.9 0 2.9 2.7 2.9 0 2.9"/>',
+  straight: '<path d="M7 19.5L17 4.5"/><path d="M11.6 19.5L21 4.5" stroke-opacity=".45"/>',
+  arrowUR: '<path d="M7.5 16.5l9-9"/><path d="M9.5 7.5h7v7"/>',
+  arrowDR: '<path d="M7.5 7.5l9 9"/><path d="M16.5 9.5v7h-7"/>',
+  arrowR: '<path d="M5 12h13.6"/><path d="M13.4 6.6L18.8 12l-5.4 5.4"/>',
+  snow: '<path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/><path d="M12 6.6l2-2M12 6.6l-2-2M12 17.4l2 2M12 17.4l-2 2"/>',
+  clock: '<circle cx="12" cy="12" r="8.4"/><path d="M12 7.6V12l3.2 1.9"/>',
+  wind: '<path d="M3.5 8.4h9.6a2.6 2.6 0 10-2.6-2.6"/><path d="M3.5 13h12.8a2.6 2.6 0 11-2.6 2.6"/><path d="M3.5 17.6h6"/>',
+  shield: '<path d="M12 3.4l7 2.4v5.4c0 4.2-2.8 7.3-7 9-4.2-1.7-7-4.8-7-9V5.8z"/><path d="M9 12.2l2.2 2.2 4-4.4"/>',
+  leaf: '<path d="M5 19c-1.4-6 2.6-12.4 14-13-.6 9.4-5.6 13.6-11.4 13.6"/><path d="M5.6 19c1.9-4.4 4.9-7.2 9.4-9"/>',
+  head: '<path d="M17 20.6v-3.2c0-.9.4-1.6 1-2.2A6.7 6.7 0 105.6 11.2v1.2l-1.5 2.4H6v3.2a2.6 2.6 0 002.6 2.6z"/><path d="M9.4 10.6h.02M12.4 9.4h.02"/>',
+  pool: '<path d="M3.2 15.6c1.6-1.7 3.2-1.7 4.8 0s3.2 1.7 4.8 0 3.2-1.7 4.8 0 2 .9 3.2 0"/><path d="M3.2 19.2c1.6-1.7 3.2-1.7 4.8 0s3.2 1.7 4.8 0 3.2-1.7 4.8 0 2 .9 3.2 0"/><circle cx="16.6" cy="5.6" r="1.9"/><path d="M6.4 11.6l4.4-2.6 3.4 2.2"/>',
+  cap: '<path d="M4.6 15.4a7.4 7.4 0 0114.8 0"/><path d="M3 15.4h18c0 1.3-1 2.3-2.3 2.3H5.3C4 17.7 3 16.7 3 15.4z"/>',
+  water2: '<path d="M8 3.5s3.4 3.8 3.4 6.2A3.4 3.4 0 114.6 9.7C4.6 7.3 8 3.5 8 3.5z"/><path d="M16.2 11.4s3 3.4 3 5.6a3 3 0 11-6 0c0-2.2 3-5.6 3-5.6z"/>',
+  pills: '<rect x="2.8" y="9.4" width="10.4" height="6.2" rx="3.1"/><path d="M8 9.4v6.2"/><circle cx="17" cy="15" r="4.6"/>',
+  wrench: '<path d="M20 5.5l-3 3-2.5-2.5 3-3a5.4 5.4 0 00-6.8 6.6L4 15.3a2.2 2.2 0 103.1 3.1l5.7-6.7A5.4 5.4 0 0020 5.5z"/>',
+  flask: '<path d="M9.5 4h5v4.4l4.2 8.2a2.2 2.2 0 01-2 3.2H7.3a2.2 2.2 0 01-2-3.2l4.2-8.2z"/><path d="M8.4 14.4h7.2"/>',
+  dropper: '<path d="M17.2 3.5a2.6 2.6 0 013.3 3.3l-1.5 1.5-3.3-3.3z"/><path d="M15.7 7.2L6.4 16.5 5 21l4.5-1.4 9.3-9.3z"/><path d="M13.6 5.2l5.2 5.2" stroke-opacity=".5"/>',
+  bottle: '<path d="M10 3.6h4v2.8l2.2 2.4a3 3 0 01.8 2v7.8a2 2 0 01-2 2H9a2 2 0 01-2-2v-7.8a3 3 0 01.8-2L10 6.4z"/><path d="M7.4 13.4h9.2"/>',
+  brush: '<rect x="4.6" y="4" width="14.8" height="7.6" rx="3.6"/><path d="M8 11.6v2.2M12 11.6v2.2M16 11.6v2.2M10 16.4v2.4M14 16.4v2.4"/>',
+  lock: '<rect x="5" y="10.4" width="14" height="9.6" rx="2.6"/><path d="M8.4 10.4V8a3.6 3.6 0 017.2 0v2.4"/>',
+  info: '<circle cx="12" cy="12" r="8.6"/><path d="M12 11.2v5.4"/><circle cx="12" cy="8.1" r=".95" fill="currentColor" stroke="none"/>',
+  warn: '<path d="M12 4.4l8.4 14.6H3.6z"/><path d="M12 9.6v4.2"/><circle cx="12" cy="16.4" r=".9" fill="currentColor" stroke="none"/>',
+  hand: '<path d="M8.5 12.5V6.2a1.5 1.5 0 013 0v4.8"/><path d="M11.5 11V5a1.5 1.5 0 013 0v6"/><path d="M14.5 11.4V7.2a1.5 1.5 0 013 0v7.4c0 3.4-2.4 6.4-6 6.4-3.2 0-5.5-2-5.5-5.4v-3a1.5 1.5 0 013 0"/>',
+  run: '<circle cx="14.4" cy="4.9" r="1.9"/><path d="M12.4 9.2l-3.2 1.6-1.6 3.4"/><path d="M12.4 9.2l3 1.4 1.2 3.2"/><path d="M12 12.6l-.8 4 2.6 3.6"/><path d="M11.2 16.6l-3.6 1.2"/>',
+  tray: '<path d="M3.6 13.4h4.2l1.2 2h6l1.2-2h4.2"/><path d="M3.6 13.4l2.6-6.8h11.6l2.6 6.8v5a1.8 1.8 0 01-1.8 1.8H5.4a1.8 1.8 0 01-1.8-1.8z"/>',
+  antenna: '<circle cx="12" cy="12" r="2.2"/><path d="M8.2 8.2a5.4 5.4 0 000 7.6M15.8 15.8a5.4 5.4 0 000-7.6M5.6 5.6a9 9 0 000 12.8M18.4 18.4a9 9 0 000-12.8"/>',
+  drive: '<rect x="3.4" y="4.4" width="17.2" height="15.2" rx="3"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none"/>',
+  search: '<circle cx="10.8" cy="10.8" r="6.4"/><path d="M15.6 15.6L20 20"/>',
+  rain: '<path d="M7.4 14.4a3.6 3.6 0 01.4-7.2 5 5 0 019.5 1.3 3.2 3.2 0 01-.3 5.9z"/><path d="M8.8 17.4l-.8 2.4M12.2 17.4l-.8 2.4M15.6 17.4l-.8 2.4"/>',
+  signal: '<path d="M3 17h2.4v3H3zM7.6 14h2.4v6H7.6zM12.2 10.6h2.4V20h-2.4zM16.8 7h2.4v13h-2.4z" fill="currentColor" stroke="none"/>',
+  wifi: '<path d="M4.4 9.6a11 11 0 0115.2 0M7.4 13a7 7 0 019.2 0M10.6 16.4a2.6 2.6 0 012.8 0"/>',
+  battery: '<rect x="2.6" y="8" width="16.4" height="8" rx="2.4"/><path d="M21 11v2"/><rect x="4.4" y="9.8" width="11" height="4.4" rx="1.3" fill="currentColor" stroke="none"/>'
+};
+/* Swift SF Symbol name → glyph key */
+const SF = {
+  "checklist": "checklist", "camera.metering.center.weighted": "meter", "sparkles": "sparkles",
+  "gearshape.fill": "gear", "sun.max.fill": "sun", "moon.stars.fill": "moon", "sun.max": "sun",
+  "flame.fill": "flame", "flame": "flame", "drop.fill": "drop", "drop.circle.fill": "drop",
+  "drop.triangle.fill": "bottle", "shower.fill": "shower", "comb.fill": "comb", "comb": "comb",
+  "questionmark.circle": "question", "lightbulb.fill": "bulb", "chevron.left": "chevL",
+  "chevron.right": "chevR", "checkmark.circle.fill": "checkCircle", "circle": "circle",
+  "star.fill": "star", "trash": "trash", "arrow.clockwise": "refresh", "arrow.counterclockwise": "refresh",
+  "photo": "photo", "photo.on.rectangle": "photo", "camera.fill": "camera", "plus.circle.fill": "plusCircle",
+  "person.crop.square": "personSquare", "person.crop.square.badge.camera": "personSquare",
+  "person.crop.square.badge.camera.fill": "personSquare", "circle.grid.cross.up.filled": "crown",
+  "water.waves": "waves", "scribble.variable": "curly", "hurricane": "coily", "line.diagonal": "straight",
+  "arrow.up.forward": "arrowUR", "arrow.up.right": "arrowUR", "arrow.down.right": "arrowDR",
+  "arrow.right": "arrowR", "snowflake": "snow", "tortoise": "clock", "wind": "wind",
+  "checkmark.shield": "shield", "leaf": "leaf", "brain.head.profile": "head",
+  "figure.pool.swim": "pool", "graduationcap": "cap", "aqi.medium": "water2", "pills.fill": "pills",
+  "wrench.and.screwdriver.fill": "brush", "cross.vial.fill": "flask", "eyedropper.halffull": "dropper",
+  "circle.lefthalf.filled": "clock", "hand.raised.fingers.spread.fill": "hand", "figure.run": "run",
+  "tray.2": "tray", "internaldrive": "drive", "antenna.radiowaves.left.and.right": "antenna",
+  "magnifyingglass": "search", "cloud.rain.fill": "rain", "lock.fill": "lock",
+  "info.circle": "info", "exclamationmark.triangle.fill": "warn", "list.clipboard.fill": "checklist",
+  "chart.line.downtrend.xyaxis": "arrowDR"
+};
+function ic(name, extra) {
+  const key = GLYPH[name] ? name : (SF[name] || "circle");
+  const body = GLYPH[key] || GLYPH.circle;
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"' +
+    (extra ? ' style="' + extra + '"' : "") + " aria-hidden=\"true\">" + body + "</svg>";
+}
+
+/* ============================================================
+   2. THEMES — the three Palette structs from AppTheme.swift,
+   at their exact hex values.
+   ============================================================ */
+const THEMES = {
+  arctic: {
+    name: "Arctic", tagline: "Deep blue, clinical calm", dark: true,
+    bg: "#001233", surface: "#0A2A5E", surface2: "#123A7A",
+    text: "#FFFFFF", text2: "#A9C1E8", accent: "#4FA3FF", accent2: "#9ED0FF",
+    hero: ["#00205B", "#0A3E8C"], pos: "#3DDC97", caution: "#FFC857", neg: "#FF6B6B"
+  },
+  steel: {
+    name: "Steel", tagline: "Dark chrome, sharp edge", dark: true,
+    bg: "#0C0F13", surface: "#171C22", surface2: "#222A33",
+    text: "#F2F5F8", text2: "#9AA7B4", accent: "#FF7A1A", accent2: "#8FB3D9",
+    hero: ["#12161C", "#2A3947"], pos: "#38D9A9", caution: "#FFD43B", neg: "#FF6B6B"
+  },
+  light: {
+    name: "Classic Light", tagline: "Clean, bright, minimal", dark: false,
+    bg: "#F5F7FA", surface: "#FFFFFF", surface2: "#EAF0F7",
+    text: "#101828", text2: "#5B6B7F", accent: "#0B5FFF", accent2: "#00205B",
+    hero: ["#0B5FFF", "#66A3FF"], pos: "#12B76A", caution: "#F79009", neg: "#F04438"
+  }
+};
+
+/* ============================================================
+   3. CATALOG — the app's bundled products.json / tips.json,
+   plus the sample remote feed (DataHub's third source).
+   ============================================================ */
+const BUNDLED_PRODUCTS = [
+  { id: "shampoo-fortify-caffeine", name: "Fortify Caffeine Shampoo", brand: "Nordkap", category: "shampoo", summary: "Gentle daily-strength shampoo with caffeine and biotin, built for guys watching their hairline. Cleans without stripping.", heroIngredients: ["Caffeine", "Biotin", "Niacinamide"], tags: ["thinning", "receding", "growth", "oily-scalp", "active"], priceTier: 2, rating: 4.6 },
+  { id: "shampoo-balance-daily", name: "Balance Daily Shampoo", brand: "Nordkap", category: "shampoo", summary: "The no-drama default: pH-balanced, sulfate-free, works for most hair and most days.", heroIngredients: ["Panthenol", "Glycerin"], tags: ["balanced-scalp", "maintenance", "straight", "wavy"], priceTier: 1, rating: 4.4 },
+  { id: "shampoo-zinc-antidandruff", name: "Zinc Control Anti-Dandruff Shampoo", brand: "Bergmann Lab", category: "shampoo", summary: "Clinical-style flake control with zinc pyrithione. Use 2–3× a week and leave it on the scalp for two minutes.", heroIngredients: ["Zinc pyrithione", "Salicylic acid", "Menthol"], tags: ["dandruff", "flaky-scalp", "oiliness", "scalp-health"], priceTier: 2, rating: 4.7 },
+  { id: "shampoo-hydra-aloe", name: "Hydra Shampoo with Aloe", brand: "ArcticMist", category: "shampoo", summary: "Creamy, low-lather wash for dry scalps and textured hair. Zero sulfates, plenty of slip.", heroIngredients: ["Aloe vera", "Shea butter", "Coconut-derived cleansers"], tags: ["dryness", "dry-scalp", "curly", "coily"], priceTier: 2, rating: 4.5 },
+  { id: "shampoo-silver-balance", name: "Silver Balance Shampoo", brand: "Bergmann Lab", category: "shampoo", summary: "Violet-toned shampoo that keeps gray and silver hair bright instead of yellow. Use once or twice a week.", heroIngredients: ["Violet pigments", "Keratin"], tags: ["graying", "maintenance"], priceTier: 2, rating: 4.3 },
+  { id: "shampoo-clarify-weekly", name: "Clarifying Weekly Wash", brand: "Nordkap", category: "shampoo", summary: "Weekly reset that strips product buildup, sweat film and mineral residue without wrecking your scalp.", heroIngredients: ["Apple cider vinegar", "Tea tree oil"], tags: ["hard-water", "styling", "oiliness", "active"], priceTier: 1, rating: 4.4 },
+  { id: "shampoo-swim-chelating", name: "Swim Rescue Chelating Shampoo", brand: "ArcticMist", category: "shampoo", summary: "Chelating formula that pulls chlorine and copper out of hair after pool sessions. A must for regular swimmers.", heroIngredients: ["EDTA", "Vitamin C", "Aloe vera"], tags: ["swimmer", "hard-water", "dryness"], priceTier: 2, rating: 4.6 },
+  { id: "conditioner-featherweight", name: "Featherweight Conditioner", brand: "ArcticMist", category: "conditioner", summary: "Light rinse-out conditioner that softens without weighing short styles down or greasing the roots.", heroIngredients: ["Panthenol", "Rice protein"], tags: ["straight", "oily-scalp", "short", "maintenance"], priceTier: 1, rating: 4.3 },
+  { id: "conditioner-deep-moisture", name: "Deep Moisture Conditioner", brand: "ArcticMist", category: "conditioner", summary: "Rich cream conditioner for dry, curly or long hair. Detangles and seals the cuticle in one pass.", heroIngredients: ["Shea butter", "Argan oil", "Ceramides"], tags: ["dryness", "curly", "coily", "frizz", "long"], priceTier: 2, rating: 4.7 },
+  { id: "serum-peppermint-tonic", name: "Peppermint Scalp Tonic", brand: "Bergmann Lab", category: "serum", summary: "Tingly daily tonic that stimulates the scalp and keeps follicles clear. Great companion to a massage routine.", heroIngredients: ["Peppermint oil", "Rosemary extract", "Caffeine"], tags: ["thinning", "growth", "scalp-health", "slow-growth"], priceTier: 2, rating: 4.5 },
+  { id: "serum-redensify", name: "Redensify Scalp Serum", brand: "TrichoWorks", category: "serum", summary: "Leave-in serum targeting the hairline and crown with caffeine and plant peptides. For clinically proven actives like minoxidil, talk to a dermatologist.", heroIngredients: ["Caffeine", "Redensyl-type peptides", "Niacinamide"], tags: ["thinning", "receding", "growth"], priceTier: 3, rating: 4.4 },
+  { id: "serum-night-recovery", name: "Night Recovery Scalp Serum", brand: "TrichoWorks", category: "serum", summary: "Overnight serum that calms tight, flaky scalps and rebuilds the moisture barrier while you sleep.", heroIngredients: ["Ceramides", "Oat extract", "Hyaluronic acid"], tags: ["scalp-health", "dry-scalp", "flaky-scalp", "dryness"], priceTier: 3, rating: 4.6 },
+  { id: "styling-sea-salt", name: "Sea Salt Texture Spray", brand: "Harbor & Oak", category: "styling", summary: "Instant beach texture and volume for straight or wavy hair. Spray on damp hair, rough-dry, done.", heroIngredients: ["Sea salt", "Kelp extract"], tags: ["styling", "straight", "wavy", "medium"], priceTier: 1, rating: 4.5 },
+  { id: "styling-matte-clay", name: "Matte Clay", brand: "Harbor & Oak", category: "styling", summary: "Strong hold, zero shine. The workhorse for short and medium cuts that need shape all day.", heroIngredients: ["Kaolin clay", "Beeswax"], tags: ["styling", "short", "medium"], priceTier: 2, rating: 4.8 },
+  { id: "styling-cream-pomade", name: "Flexible Cream Pomade", brand: "Harbor & Oak", category: "styling", summary: "Medium hold with natural finish; re-stylable through the day. Plays nicely with waves and curls.", heroIngredients: ["Lanolin", "Jojoba oil"], tags: ["styling", "curly", "wavy", "frizz"], priceTier: 2, rating: 4.6 },
+  { id: "styling-heat-shield", name: "Heat Shield Spray", brand: "Harbor & Oak", category: "styling", summary: "Thermal protectant up to 230 °C for blow-drying and hot tools. Weightless, no crunch.", heroIngredients: ["Hydrolyzed wheat protein", "Vitamin E"], tags: ["heat", "styling", "dryness"], priceTier: 2, rating: 4.5 },
+  { id: "oil-argan-jojoba", name: "Argan & Jojoba Hair Oil", brand: "ArcticMist", category: "oil", summary: "Three drops tame frizz, add shine and seal ends. Best friend of long, curly and coily hair.", heroIngredients: ["Argan oil", "Jojoba oil", "Squalane"], tags: ["dryness", "frizz", "curly", "coily", "long"], priceTier: 2, rating: 4.7 },
+  { id: "oil-rosemary-strength", name: "Rosemary Strength Oil", brand: "TrichoWorks", category: "oil", summary: "Pre-wash scalp oil built around rosemary — a folk favorite for growth support. Massage in, leave 30 minutes, wash out.", heroIngredients: ["Rosemary oil", "Pumpkin seed oil", "Castor oil"], tags: ["thinning", "growth", "slow-growth", "dry-scalp"], priceTier: 2, rating: 4.4 },
+  { id: "treatment-scalp-scrub", name: "Cooling Scalp Exfoliant Scrub", brand: "Bergmann Lab", category: "treatment", summary: "Weekly sugar-based scrub that lifts flakes, buildup and dead skin so treatments actually reach the scalp.", heroIngredients: ["Sugar crystals", "Salicylic acid", "Menthol"], tags: ["flaky-scalp", "dandruff", "oily-scalp", "scalp-health"], priceTier: 2, rating: 4.6 },
+  { id: "treatment-protein-mask", name: "Protein Repair Mask", brand: "ArcticMist", category: "treatment", summary: "Ten-minute weekly mask that rebuilds heat- and sun-damaged hair with hydrolyzed proteins.", heroIngredients: ["Hydrolyzed keratin", "Shea butter", "Ceramides"], tags: ["dryness", "heat", "frizz", "long"], priceTier: 2, rating: 4.7 },
+  { id: "treatment-scalp-spf", name: "Invisible Scalp SPF 30 Mist", brand: "Bergmann Lab", category: "treatment", summary: "Non-greasy sunscreen mist for exposed scalps, part lines and thinning crowns. Sun protection is hair-loss care too.", heroIngredients: ["UVA/UVB filters", "Vitamin E"], tags: ["receding", "thinning", "buzz", "maintenance"], priceTier: 2, rating: 4.3 },
+  { id: "supplement-biotin-complex", name: "Biotin+ Complex", brand: "VitaForm", category: "supplement", summary: "Daily gummy with biotin, zinc and selenium. Supplements only help if your diet is short — food first.", heroIngredients: ["Biotin", "Zinc", "Selenium"], tags: ["slow-growth", "thinning", "growth"], priceTier: 2, rating: 4.2 },
+  { id: "supplement-omega-zinc", name: "Omega & Zinc Men's Formula", brand: "VitaForm", category: "supplement", summary: "Omega-3s plus zinc and vitamin D for overall hair and scalp support, especially in winter months.", heroIngredients: ["Omega-3", "Zinc", "Vitamin D3"], tags: ["maintenance", "growth", "graying"], priceTier: 2, rating: 4.1 },
+  { id: "tool-scalp-brush", name: "Silicone Scalp Massage Brush", brand: "Forma", category: "tool", summary: "Firm silicone bristles for the daily 3-minute massage your hairline routine calls for. Use dry or in the shower.", heroIngredients: ["Medical-grade silicone"], tags: ["growth", "thinning", "scalp-health", "active"], priceTier: 1, rating: 4.8 },
+  { id: "tool-microfiber-towel", name: "Microfiber Hair Towel", brand: "Forma", category: "tool", summary: "Blots water fast with far less friction than terry cloth — less frizz, less breakage, less towel damage.", heroIngredients: ["Microfiber weave"], tags: ["frizz", "curly", "long", "dryness"], priceTier: 1, rating: 4.6 },
+  { id: "tool-wide-tooth-comb", name: "Wide-Tooth Detangling Comb", brand: "Forma", category: "tool", summary: "Seamless wide-tooth comb for detangling curls and coils damp, with conditioner in. Never brush curls dry.", heroIngredients: ["Cellulose acetate"], tags: ["curly", "coily", "frizz"], priceTier: 1, rating: 4.7 }
+];
+const REMOTE_PRODUCTS = [
+  { id: "remote-serum-copper-peptide", name: "Copper Peptide Scalp Ampoule", brand: "LabNine", category: "serum", summary: "Community-feed exclusive: copper-peptide ampoule for hairline and crown support, applied nightly.", heroIngredients: ["Copper peptides", "Adenosine"], tags: ["thinning", "receding", "growth"], priceTier: 3, rating: 4.5 },
+  { id: "remote-shampoo-cold-brew", name: "Cold Brew Coffee Shampoo", brand: "LabNine", category: "shampoo", summary: "Community-feed exclusive: cold-processed coffee shampoo for daily stimulation on oily scalps.", heroIngredients: ["Coffee extract", "Caffeine", "Mint"], tags: ["oily-scalp", "growth", "active"], priceTier: 2, rating: 4.3 }
+];
+const BUNDLED_TIPS = [
+  { id: "tip-water-temp", title: "Wash warm, rinse cool", body: "Hot water strips scalp oils and inflames dry scalps. Wash with lukewarm water and finish with a cooler rinse to help the cuticle lie flat." },
+  { id: "tip-towel-blot", title: "Blot, don't rub", body: "Wet hair is at its weakest. Rubbing with a towel snaps strands and roughs up the cuticle — blot and squeeze instead, ideally with microfiber." },
+  { id: "tip-shampoo-scalp", title: "Shampoo is for the scalp", body: "Lather at the roots where oil and sweat live. The suds rinsing through the lengths is all the mid-shaft needs on most days." },
+  { id: "tip-derm-early", title: "See a dermatologist early", body: "If your hairline or crown is visibly changing, the earlier you talk to a dermatologist, the more options you have. Clinically proven treatments exist — timing matters more than any product." },
+  { id: "tip-consistency", title: "Growth routines run on streaks", body: "Scalp serums and massage only show results after 8–12 weeks of near-daily use. Missing whole weeks resets the clock — build the habit first." },
+  { id: "tip-nutrition", title: "Feed the follicle", body: "Hair is protein. Chronic low protein, iron or vitamin D shows up on your head months later. Fix the plate before buying a fourth serum." },
+  { id: "tip-stress", title: "Stress sheds are real", body: "Big stress events can push hair into a resting phase and cause visible shedding 2–3 months later. It's usually temporary — manage the stress, keep the routine." },
+  { id: "tip-hat-myth", title: "Hats don't cause baldness", body: "A normal-fitting hat won't kill follicles — that's a myth. Very tight headwear worn daily can cause traction stress at the edges, so keep it comfortable." },
+  { id: "tip-swim-prewet", title: "Pre-wet before the pool", body: "Hair soaked in tap water absorbs far less chlorinated water. Wet it at the poolside shower, and rinse again right after your swim." },
+  { id: "tip-sweat", title: "Sweat isn't dirt — but don't sleep in it", body: "After training, a water-only rinse and a quick scalp massage clears the salt without over-washing. Save the shampoo for your scheduled wash days." },
+  { id: "tip-heat-distance", title: "Keep the dryer moving", body: "Blow-dry on medium heat, nozzle 15 cm away, always moving. Concentrated heat on one spot does more damage than the tool itself." },
+  { id: "tip-scan-consistency", title: "Scan like a scientist", body: "For hairline tracking, consistency beats quality: same mirror, same light, same distance, hair pulled back the same way. Change one variable and the trend gets noisy." },
+  { id: "tip-trim-schedule", title: "Trim on a schedule", body: "Every 4–6 weeks for short cuts, 8–12 for longer styles. Regular trims keep ends from splitting upward and make growth look intentional." }
+];
+const REMOTE_TIPS = [
+  { id: "remote-tip-photo-light", title: "North-facing light wins", body: "Indirect daylight from a north-facing window is the most repeatable light source for progress photos — no harsh shadows, no yellow cast." }
+];
+
+const CATEGORY = {
+  shampoo: { label: "Shampoo", symbol: "shower.fill" },
+  conditioner: { label: "Conditioner", symbol: "drop.circle.fill" },
+  treatment: { label: "Treatment", symbol: "cross.vial.fill" },
+  serum: { label: "Scalp Serum", symbol: "eyedropper.halffull" },
+  styling: { label: "Styling", symbol: "comb.fill" },
+  oil: { label: "Oil", symbol: "drop.triangle.fill" },
+  supplement: { label: "Supplement", symbol: "pills.fill" },
+  tool: { label: "Tools", symbol: "wrench.and.screwdriver.fill" }
+};
+const CATEGORY_ORDER = ["shampoo", "conditioner", "treatment", "serum", "styling", "oil", "supplement", "tool"];
+
+/* ============================================================
+   4. PROFILE VOCABULARY — mirrors HairProfile.swift
+   ============================================================ */
+const HAIR_TYPES = [
+  { id: "straight", label: "Straight", symbol: "line.diagonal" },
+  { id: "wavy", label: "Wavy", symbol: "water.waves" },
+  { id: "curly", label: "Curly", symbol: "scribble.variable" },
+  { id: "coily", label: "Coily", symbol: "hurricane" }
+];
+const HAIR_LENGTHS = [
+  { id: "buzz", label: "Buzz / shaved" }, { id: "short", label: "Short" },
+  { id: "medium", label: "Medium" }, { id: "long", label: "Long" }
+];
+const SCALPS = [
+  { id: "dry", label: "Dry", blurb: "Tight, sometimes itchy, rarely greasy" },
+  { id: "balanced", label: "Balanced", blurb: "No real complaints" },
+  { id: "oily", label: "Oily", blurb: "Greasy by the end of the day" },
+  { id: "flaky", label: "Flaky", blurb: "Visible flakes on shoulders or scalp" }
+];
+const CONCERNS = [
+  { id: "thinning", label: "Thinning hair", symbol: "chart.line.downtrend.xyaxis" },
+  { id: "receding", label: "Receding hairline", symbol: "arrow.up.forward" },
+  { id: "dandruff", label: "Dandruff / flakes", symbol: "snowflake" },
+  { id: "dryness", label: "Dry, brittle hair", symbol: "sun.max" },
+  { id: "oiliness", label: "Greasy roots", symbol: "drop.fill" },
+  { id: "graying", label: "Graying", symbol: "circle.lefthalf.filled" },
+  { id: "slow-growth", label: "Slow growth", symbol: "tortoise" },
+  { id: "frizz", label: "Frizz", symbol: "wind" }
+];
+const GOALS = [
+  { id: "maintain", label: "Keep it healthy", symbol: "checkmark.shield" },
+  { id: "regrow", label: "Fight hair loss", symbol: "leaf" },
+  { id: "style", label: "Level up styling", symbol: "comb" },
+  { id: "scalp", label: "Fix my scalp", symbol: "brain.head.profile" }
+];
+const EXERCISE = [
+  { id: "rarely", label: "Rarely" }, { id: "weekly", label: "A few times a week" }, { id: "daily", label: "Daily" }
+];
+const AGES = ["Under 20", "20–29", "30–39", "40–49", "50+"];
+
+const SCAN_ANGLES = [
+  { id: "front", order: 0, title: "Front hairline", symbol: "person.crop.square", optional: false, usesFace: true,
+    guidance: "Face the camera straight on. Pull hair off your forehead, keep eyebrows visible, and use even, indirect light." },
+  { id: "leftTemple", order: 1, title: "Left temple", symbol: "person.crop.square.badge.camera", optional: false, usesFace: true,
+    guidance: "Turn your head about 30° to the right so your left temple faces the camera. Keep the eyebrow in frame." },
+  { id: "rightTemple", order: 2, title: "Right temple", symbol: "person.crop.square.badge.camera.fill", optional: false, usesFace: true,
+    guidance: "Turn your head about 30° to the left so your right temple faces the camera. Keep the eyebrow in frame." },
+  { id: "crown", order: 3, title: "Crown", symbol: "circle.grid.cross.up.filled", optional: true, usesFace: false,
+    guidance: "Hold the phone above and behind your head (or ask someone to help) and shoot straight down at the crown." }
+];
+const angleById = id => SCAN_ANGLES.find(a => a.id === id);
+
+function defaultProfile() {
+  return {
+    name: "", ageRange: "20–29", hairType: "straight", hairLength: "short",
+    scalp: "balanced", concerns: [], currentWashesPerWeek: 4, goal: "maintain",
+    lifestyle: { exercise: "weekly", swims: false, hardWater: false, heatStyling: false, wearsHats: false }
+  };
+}
+const displayName = p => (p && p.name.trim()) ? p.name.trim() : "Champ";
+
+/* matchTags — HairProfile.matchTags */
+function matchTags(p) {
+  const t = new Set([p.hairType, p.hairLength, p.scalp + "-scalp"]);
+  p.concerns.forEach(c => t.add(c));
+  t.add({ maintain: "maintenance", regrow: "growth", style: "styling", scalp: "scalp-health" }[p.goal]);
+  if (p.scalp === "flaky") t.add("dandruff");
+  if (p.concerns.includes("thinning") || p.concerns.includes("receding")) t.add("growth");
+  if (p.lifestyle.swims) t.add("swimmer");
+  if (p.lifestyle.hardWater) t.add("hard-water");
+  if (p.lifestyle.heatStyling) t.add("heat");
+  if (p.lifestyle.wearsHats) t.add("hats");
+  if (p.lifestyle.exercise === "daily") t.add("active");
+  return t;
+}
+
+/* ============================================================
+   5. ROUTINE ENGINE — port of RoutineEngine.swift
+   ============================================================ */
+const ALL_DAYS = [1, 2, 3, 4, 5, 6, 7];
+
+function weekdaysForTimesPerWeek(n) {
+  switch (Math.max(1, Math.min(7, n))) {
+    case 1: return [4];
+    case 2: return [2, 5];
+    case 3: return [2, 4, 6];
+    case 4: return [1, 3, 5, 7];
+    case 5: return [1, 2, 4, 6, 7];
+    case 6: return [1, 2, 3, 4, 6, 7];
+    default: return ALL_DAYS.slice();
+  }
+}
+
+function buildRoutine(p) {
+  const rationale = [], focus = [], steps = [];
+  const scalpLabel = SCALPS.find(s => s.id === p.scalp).label;
+
+  let washes = { oily: 5, balanced: 4, dry: 2, flaky: 3 }[p.scalp];
+  if (p.lifestyle.exercise === "daily") washes = Math.min(7, washes + 1);
+  if (p.lifestyle.swims) washes = Math.min(7, washes + 1);
+  if (p.concerns.includes("oiliness")) washes = Math.min(7, washes + 1);
+  if (p.concerns.includes("dryness") && p.scalp !== "oily") washes = Math.max(2, washes - 1);
+
+  rationale.push("A " + scalpLabel.toLowerCase() + " scalp does best around " + washes +
+    "× shampoo per week — enough to stay clean without stripping natural oils.");
+  if (p.currentWashesPerWeek > washes + 1) {
+    rationale.push("You currently wash " + p.currentWashesPerWeek + "×/week. We're dialing it back — over-washing triggers rebound oil and dryness.");
+  } else if (p.currentWashesPerWeek < washes - 1) {
+    rationale.push("You currently wash " + p.currentWashesPerWeek + "×/week. We're stepping it up to keep buildup and scalp irritation in check.");
+  }
+
+  const washDays = weekdaysForTimesPerWeek(washes);
+
+  let shampooDetail, shampooWhy;
+  if (p.scalp === "flaky" || p.concerns.includes("dandruff")) {
+    shampooDetail = "Use an anti-dandruff shampoo (zinc pyrithione or ketoconazole). Massage into the scalp, leave for 2–3 minutes before rinsing.";
+    shampooWhy = "Active anti-dandruff ingredients need contact time on the scalp to control the fungus behind most flaking.";
+    focus.push("Flake control");
+  } else if (p.concerns.includes("thinning") || p.concerns.includes("receding")) {
+    shampooDetail = "Use a gentle fortifying shampoo (caffeine/biotin). Massage with fingertips for 60 seconds — never nails.";
+    shampooWhy = "A clean, stimulated scalp is the baseline for any hair-retention effort.";
+    focus.push("Hair retention");
+  } else if (p.scalp === "dry" || p.concerns.includes("dryness")) {
+    shampooDetail = "Use a hydrating, sulfate-free shampoo with lukewarm (not hot) water.";
+    shampooWhy = "Hot water and harsh sulfates strip the oils a dry scalp is already short on.";
+    focus.push("Moisture");
+  } else {
+    shampooDetail = "Use a balancing daily shampoo. Lather at the scalp, let the runoff clean the lengths.";
+    shampooWhy = "Shampoo is for the scalp; the lengths only need the rinse-through.";
+    focus.push("Scalp balance");
+  }
+  steps.push({ id: "shampoo", title: "Shampoo", detail: shampooDetail, why: shampooWhy, timeOfDay: "evening", weekdays: washDays, frequencyLabel: washes + "×/week", icon: "shower.fill" });
+
+  if (p.hairLength !== "buzz") {
+    steps.push({ id: "condition", title: "Condition", detail: "After shampoo, work conditioner through mid-lengths and ends. Leave 1–2 minutes, rinse cool.", why: "Conditioner reseals the cuticle that washing opens — skipping it is the #1 cause of dull, frizzy hair in men.", timeOfDay: "evening", weekdays: washDays, frequencyLabel: "Wash days", icon: "drop.circle.fill" });
+  }
+
+  const wantsGrowth = p.goal === "regrow" || p.concerns.includes("thinning") || p.concerns.includes("receding");
+  if (wantsGrowth) {
+    steps.push({ id: "serum", title: "Scalp serum", detail: "Apply a targeted scalp serum to the hairline and crown on a dry or towel-dry scalp. For clinically proven options (minoxidil), talk to a dermatologist first.", why: "Consistent daily application matters more than the product itself — retention treatments only work with unbroken streaks.", timeOfDay: "evening", weekdays: ALL_DAYS.slice(), frequencyLabel: "Daily", icon: "eyedropper.halffull" });
+    steps.push({ id: "massage", title: "Scalp massage — 3 min", detail: "Fingertips or a silicone brush, firm circular strokes across the hairline, temples and crown.", why: "Small studies link regular scalp massage to increased hair thickness via improved blood flow and mechanical stimulation.", timeOfDay: "morning", weekdays: ALL_DAYS.slice(), frequencyLabel: "Daily", icon: "hand.raised.fingers.spread.fill" });
+    focus.push("Growth stimulation");
+  }
+
+  if (p.scalp === "flaky" || p.concerns.includes("dandruff") || p.goal === "scalp") {
+    steps.push({ id: "exfoliate", title: "Scalp exfoliation", detail: "Once a week, use a scalp scrub or exfoliating brush before shampooing to lift buildup and dead skin.", why: "A weekly reset keeps follicles clear and helps actives reach the scalp instead of sitting on buildup.", timeOfDay: "evening", weekdays: [7], frequencyLabel: "1×/week", icon: "sparkles" });
+  }
+
+  if (p.concerns.includes("dryness") || p.hairType === "curly" || p.hairType === "coily") {
+    steps.push({ id: "mask", title: "Deep-conditioning mask", detail: "Swap conditioner for a mask once a week. Leave in 5–10 minutes while you shower.", why: "Curly and dry hair loses moisture faster along the curve of each strand — a weekly mask replaces what daily conditioner can't.", timeOfDay: "evening", weekdays: [1], frequencyLabel: "1×/week", icon: "cloud.rain.fill" });
+    focus.push("Deep moisture");
+  }
+
+  if (p.lifestyle.heatStyling) {
+    steps.push({ id: "heat-protect", title: "Heat protectant before styling", detail: "Mist a heat protectant on damp hair before any blow-dry or hot tool. Keep the dryer moving, medium heat.", why: "Unprotected heat above ~150 °C permanently cracks the hair cuticle — protectant buys you a big safety margin.", timeOfDay: "morning", weekdays: ALL_DAYS.slice(), frequencyLabel: "Styling days", icon: "flame.fill" });
+  }
+  if (p.lifestyle.swims) {
+    steps.push({ id: "swim-rinse", title: "Pre-wet + rinse around swims", detail: "Soak hair with tap water before the pool (saturated hair absorbs less chlorine) and rinse right after.", why: "Chlorine bonds to dry hair and oxidizes it — pre-wetting is the cheapest protection there is.", timeOfDay: "morning", weekdays: [3, 6], frequencyLabel: "Swim days", icon: "figure.pool.swim" });
+  }
+  if (p.lifestyle.hardWater) {
+    steps.push({ id: "chelate", title: "Chelating / clarifying wash", detail: "Once a week, replace your regular shampoo with a chelating wash to strip mineral buildup.", why: "Hard-water minerals coat the strand, blocking moisture and making hair stiff and dull.", timeOfDay: "evening", weekdays: [4], frequencyLabel: "1×/week", icon: "aqi.medium" });
+  }
+
+  if (p.hairLength !== "buzz") {
+    const styleDetail = {
+      straight: "Style on dry or slightly damp hair — matte clay or paste for texture, a light cream for a natural finish.",
+      wavy: "Scrunch a sea-salt spray or light cream into damp hair and let waves set naturally where you can.",
+      curly: "Apply curl cream to damp hair, scrunch upward, then air-dry or diffuse. Don't brush curls dry.",
+      coily: "Work a leave-in cream or oil through damp hair in sections. Style with fingers or a wide-tooth comb."
+    }[p.hairType];
+    steps.push({ id: "style", title: "Style", detail: styleDetail, why: "Matching product to your hair type is 80% of good styling — technique covers the rest.", timeOfDay: "morning", weekdays: ALL_DAYS.slice(), frequencyLabel: "Daily", icon: "comb.fill" });
+  }
+
+  if (p.lifestyle.exercise === "daily" && washes < 6) {
+    const rinseDays = ALL_DAYS.filter(d => !washDays.includes(d));
+    steps.push({ id: "rinse", title: "Water-only rinse after training", detail: "On non-wash days, rinse sweat out with water only and a quick fingertip massage — no shampoo.", why: "Sweat left on the scalp irritates it, but shampooing daily overshoots — a water rinse is the middle path.", timeOfDay: "evening", weekdays: rinseDays, frequencyLabel: "Non-wash days", icon: "figure.run" });
+  }
+
+  if (!focus.length) focus.push("Everyday maintenance");
+  rationale.push("Consistency beats intensity: a routine you repeat for 8–12 weeks will always outperform a perfect one you abandon in two.");
+
+  const ordered = steps.filter(s => s.timeOfDay === "morning").concat(steps.filter(s => s.timeOfDay === "evening"));
+  return {
+    generatedAt: new Date().toISOString(),
+    washesPerWeek: washes,
+    headline: washes + "×/week wash plan · " + focus.slice(0, 2).join(" + "),
+    focusAreas: focus,
+    rationale: rationale,
+    steps: ordered
+  };
+}
+
+function stepsFor(routine, date, timeOfDay) {
+  if (!routine) return [];
+  const wd = date.getDay() + 1; // JS 0=Sun → Swift 1=Sun
+  return routine.steps.filter(s => s.weekdays.includes(wd) && (!timeOfDay || s.timeOfDay === timeOfDay));
+}
+
+/* --- product scoring --- */
+function tagWeight(tag) {
+  if (CONCERNS.some(c => c.id === tag)) return 3;
+  if (tag.endsWith("-scalp")) return 2.5;
+  if (["growth", "maintenance", "styling", "scalp-health"].includes(tag)) return 2;
+  if (["swimmer", "hard-water", "heat", "hats", "active"].includes(tag)) return 1.5;
+  return 1;
+}
+function scoreProduct(product, tags) {
+  let score = 0;
+  product.tags.forEach(t => { if (tags.has(t)) score += tagWeight(t); });
+  if (score > 0) score += product.rating * 0.3;
+  return score;
+}
+function recommend(products, profile, limit) {
+  limit = limit || 6;
+  if (!profile) return products.slice(0, limit);
+  const tags = matchTags(profile);
+  const ranked = products.map(p => ({ p: p, s: scoreProduct(p, tags) }))
+    .filter(x => x.s > 0).sort((a, b) => b.s - a.s).map(x => x.p);
+  if (!ranked.length) return products.slice().sort((a, b) => b.rating - a.rating).slice(0, limit);
+  return ranked.slice(0, limit);
+}
+const REASONS = {
+  thinning: "Targets thinning hair", receding: "Formulated for receding hairlines",
+  dandruff: "Fights dandruff and flaking", dryness: "Rehydrates dry hair",
+  oiliness: "Controls excess oil", graying: "Cares for graying hair",
+  "slow-growth": "Supports faster growth", frizz: "Tames frizz",
+  growth: "Supports your growth goal", maintenance: "Great for everyday maintenance",
+  styling: "Fits your styling goal", "scalp-health": "Boosts scalp health",
+  swimmer: "Protects hair from pool chlorine", "hard-water": "Counters hard-water buildup",
+  heat: "Shields against heat styling", hats: "Good for frequent hat wearers",
+  active: "Fits a sweaty, active lifestyle"
+};
+function reasonForTag(tag) {
+  if (REASONS[tag]) return REASONS[tag];
+  if (["straight", "wavy", "curly", "coily"].includes(tag)) return "Suits " + tag + " hair";
+  if (["buzz", "short", "medium", "long"].includes(tag)) return "Works for " + tag + " length";
+  if (tag.endsWith("-scalp")) return "Matches your " + tag.replace("-scalp", "") + " scalp";
+  return null;
+}
+function productReasons(product, profile) {
+  if (!profile) return [];
+  const tags = matchTags(profile);
+  return product.tags.filter(t => tags.has(t)).map(reasonForTag).filter(Boolean);
+}
+const priceLabel = tier => "$".repeat(Math.max(1, Math.min(3, tier)));
+
+/* ============================================================
+   6. SCAN MATH — ports of ScanModels.swift and HairlineAnalyzer.swift
+   ============================================================ */
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const hairlineScoreFromRatio = r => clamp((0.55 - r) * 400, 0, 100);
+
+function weightedAvg(metrics, key, heavyAngle) {
+  const pairs = metrics.filter(m => m[key] != null)
+    .map(m => ({ v: m[key], w: m.angle === heavyAngle ? 2 : 1 }));
+  if (!pairs.length) return null;
+  const tw = pairs.reduce((s, p) => s + p.w, 0);
+  return pairs.reduce((s, p) => s + p.v * p.w, 0) / tw;
+}
+function sessionHairlineRatio(s) { return weightedAvg(s.metrics, "hairlineRatio", "front"); }
+function sessionHairlineScore(s) { const r = sessionHairlineRatio(s); return r == null ? null : hairlineScoreFromRatio(r); }
+function sessionDensity(s) { return weightedAvg(s.metrics, "densityScore", "crown"); }
+function sessionConfidence(s) {
+  if (!s.metrics.length) return 0;
+  return s.metrics.reduce((a, m) => a + m.confidence, 0) / s.metrics.length;
+}
+
+/* ScanTrends.compute */
+function computeTrends(sessions) {
+  const sorted = sessions.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+  if (sorted.length < 2) return null;
+  const latest = sorted[sorted.length - 1];
+  const baseline = sorted.slice(0, -1).slice(-3);
+  const mk = (latestVal, baseVals, threshold, up, flat, down) => {
+    if (latestVal == null || !baseVals.length) return null;
+    const base = baseVals.reduce((a, b) => a + b, 0) / baseVals.length;
+    const delta = (latestVal - base) / Math.max(base, 1) * 100;
+    if (delta > threshold) return { direction: "improving", deltaPercent: delta, message: up };
+    if (delta < -threshold) return { direction: "declining", deltaPercent: delta, message: down };
+    return { direction: "stable", deltaPercent: delta, message: flat };
+  };
+  const hairline = mk(
+    sessionHairlineScore(latest), baseline.map(sessionHairlineScore).filter(v => v != null), 4,
+    "Hairline index is up vs your baseline — front coverage reads slightly fuller. Keep the routine going.",
+    "No meaningful hairline movement. Stability is the goal — that's a win.",
+    "Hairline index slipped vs your baseline. Re-scan in 2–4 weeks under the same light; if the slide continues, talk to a dermatologist."
+  );
+  const density = mk(
+    sessionDensity(latest), baseline.map(sessionDensity).filter(v => v != null), 6,
+    "Density index is trending up — coverage and texture read fuller than your baseline.",
+    "Density looks steady vs your baseline scans.",
+    "Density index dipped vs your baseline. Check lighting first; if it persists across scans, consider a professional check-up."
+  );
+  if (!hairline && !density) return null;
+  return { hairline: hairline, density: density };
+}
+
+/* --- Otsu threshold + between-class separation (identical to Swift) --- */
+function otsu(histogram, total) {
+  if (total <= 0) return { threshold: 128, separation: 0 };
+  const n = total;
+  let sumAll = 0;
+  for (let i = 0; i < 256; i++) sumAll += i * histogram[i];
+  const meanAll = sumAll / n;
+  let totalVariance = 0;
+  for (let i = 0; i < 256; i++) { const d = i - meanAll; totalVariance += d * d * histogram[i]; }
+  totalVariance /= n;
+
+  let wB = 0, sumB = 0, bestT = 128, bestBetween = 0;
+  for (let t = 0; t < 256; t++) {
+    wB += histogram[t];
+    if (wB === 0) continue;
+    const wF = n - wB;
+    if (wF === 0) break;
+    sumB += t * histogram[t];
+    const mB = sumB / wB, mF = (sumAll - sumB) / wF, diff = mB - mF;
+    const between = (wB / n) * (wF / n) * diff * diff;
+    if (between > bestBetween) { bestBetween = between; bestT = t; }
+  }
+  return { threshold: bestT, separation: totalVariance > 0 ? bestBetween / totalVariance : 0 };
+}
+
+/* Pixel accessors over ImageData, top-left origin (matches PixelBuffer) */
+function makeBuffer(imageData) {
+  const d = imageData.data, w = imageData.width, h = imageData.height;
+  return {
+    width: w, height: h,
+    rgb: (x, y) => { const i = (y * w + x) * 4; return [d[i], d[i + 1], d[i + 2]]; },
+    lum: (x, y) => { const i = (y * w + x) * 4; return 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; }
+  };
+}
+
+/* densityScore(buffer:region:) */
+function densityScore(buf, region) {
+  const x0 = Math.max(0, Math.floor(region.x));
+  const x1 = Math.min(buf.width - 1, Math.floor(region.x + region.w));
+  const y0 = Math.max(0, Math.floor(region.y));
+  const y1 = Math.min(buf.height - 1, Math.floor(region.y + region.h));
+  if (!(x1 > x0 + 4 && y1 > y0 + 4)) return 0;
+
+  const histogram = new Array(256).fill(0);
+  let total = 0;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    histogram[Math.min(255, Math.floor(buf.lum(x, y)))]++;
+    total++;
+  }
+  const { threshold, separation } = otsu(histogram, total);
+
+  let darkCount = 0, edgeCount = 0, edgeSamples = 0, lumSum = 0;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    const lum = buf.lum(x, y);
+    lumSum += lum;
+    if (lum < threshold) darkCount++;
+    if (x < x1) { if (Math.abs(lum - buf.lum(x + 1, y)) > 24) edgeCount++; edgeSamples++; }
+  }
+  const meanLum = lumSum / total;
+  let coverage = darkCount / total;
+  if (separation < 0.35) coverage = meanLum < 110 ? 0.9 : 0.15;
+  const edgeFraction = edgeCount / Math.max(1, edgeSamples);
+  return clamp(100 * Math.min(1, 0.7 * coverage + 0.6 * Math.min(1, edgeFraction * 3)), 0, 100);
+}
+
+/* detectHairline(buffer:faceRect:eyebrowY:) */
+function detectHairline(buf, face, eyebrowY) {
+  const faceHeight = face.h;
+  if (faceHeight <= 40) return null;
+
+  const x0 = Math.max(0, Math.floor(face.x + face.w * 0.22));
+  const x1 = Math.min(buf.width - 1, Math.floor(face.x + face.w - face.w * 0.22));
+  if (!(x1 > x0 + 8)) return null;
+
+  const browY = Math.min(buf.height - 1, Math.max(1, Math.floor(eyebrowY)));
+  const skinBottom = Math.max(0, browY - Math.floor(faceHeight * 0.04));
+  const skinTop = Math.max(0, browY - Math.floor(faceHeight * 0.18));
+  if (!(skinBottom > skinTop)) return null;
+
+  let rSum = 0, gSum = 0, bSum = 0, samples = 0;
+  for (let y = skinTop; y <= skinBottom; y++) for (let x = x0; x <= x1; x += 2) {
+    const c = buf.rgb(x, y);
+    rSum += c[0]; gSum += c[1]; bSum += c[2]; samples++;
+  }
+  if (!samples) return null;
+  const skin = [rSum / samples, gSum / samples, bSum / samples];
+
+  const searchTop = Math.max(0, browY - Math.floor(faceHeight * 0.95));
+  const hits = [], hitPts = [];
+  let columns = 0;
+  for (let x = x0; x <= x1; x += 2) {
+    columns++;
+    let run = 0, y = skinTop;
+    while (y > searchTop) {
+      const c = buf.rgb(x, y);
+      const distance = Math.abs(c[0] - skin[0]) + Math.abs(c[1] - skin[1]) + Math.abs(c[2] - skin[2]);
+      if (distance > 110) {
+        run++;
+        if (run >= 4) { const hy = y + run - 1; hits.push(hy); hitPts.push([x, hy]); break; }
+      } else run = 0;
+      y--;
+    }
+  }
+
+  const coverage = hits.length / Math.max(1, columns);
+  if (coverage < 0.35 || !hits.length) return null;
+
+  const sorted = hits.slice().sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  const foreheadHeight = browY - median;
+  if (foreheadHeight <= 2) return null;
+  const ratio = clamp(foreheadHeight / faceHeight, 0.05, 1.2);
+
+  const q1 = sorted[Math.floor(sorted.length / 4)];
+  const q3 = sorted[Math.floor(3 * sorted.length / 4)];
+  const spreadPenalty = Math.min(1, (q3 - q1) / (faceHeight * 0.25));
+  const confidence = clamp(coverage * (1 - 0.6 * spreadPenalty), 0.1, 0.95);
+
+  return { ratio, confidence, hairlineY: median, points: hitPts, skinBand: { top: skinTop, bottom: skinBottom, x0, x1 }, browY, searchTop };
+}
+
+/* analyzeCore(cgImage:angle:) — with the guide frame standing in for Vision */
+function analyzeImageData(imageData, angleId, guide) {
+  const buf = makeBuffer(imageData);
+  const W = buf.width, H = buf.height;
+  const angle = angleById(angleId);
+  let hairlineRatio = null, confidence = 0, region, hl = null, face = null, browY = null;
+
+  if (angle.usesFace && guide) {
+    face = { x: guide.x * W, y: guide.y * H, w: guide.w * W, h: guide.h * H };
+    browY = face.y + guide.brow * face.h;
+    hl = detectHairline(buf, face, browY);
+    hairlineRatio = hl ? hl.ratio : null;
+    confidence = hl ? hl.confidence : 0.2;
+    if (hl) {
+      const top = Math.max(0, hl.hairlineY - face.h * 0.45);
+      const regionHeight = Math.max(10, hl.hairlineY - top);
+      region = { x: face.x + face.w * 0.15, y: top, w: face.w * 0.7, h: regionHeight };
+    } else {
+      region = { x: face.x, y: Math.max(0, face.y - face.h * 0.4), w: face.w, h: face.h * 0.45 };
+    }
+  } else if (angleId === "crown") {
+    region = { x: 0.2 * W, y: 0.2 * H, w: 0.6 * W, h: 0.6 * H };
+    confidence = 0.7;
+  } else {
+    region = { x: 0.25 * W, y: 0.05 * H, w: 0.5 * W, h: 0.35 * H };
+    confidence = 0.2;
+  }
+
+  return {
+    metric: {
+      angle: angleId,
+      hairlineRatio: hairlineRatio,
+      densityScore: densityScore(buf, region),
+      confidence: clamp(confidence, 0.1, 0.95)
+    },
+    debug: { region, hl, face, browY }
+  };
+}
+
+/* ============================================================
+   7. STATE
+   ============================================================ */
+const STORE_KEY = "mane.mirror.v1";
+const state = {
+  theme: "arctic",
+  tab: "today",
+  onboarding: true,
+  step: 0,
+  draft: defaultProfile(),
+  profile: null,
+  routine: null,
+  completions: {},
+  sessions: [],
+  remoteFeed: false,
+  previewWeekday: null,
+  sheet: null,          // { kind:'product', id }
+  scanDetail: null,     // session id
+  flow: null,           // active scan flow
+  productFilter: null,
+  productSearch: "",
+  chartMetric: "hairline",
+  expandedWhy: null,
+  toast: null
+};
+
+function save() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      theme: state.theme, profile: state.profile, routine: state.routine,
+      completions: state.completions, sessions: state.sessions,
+      remoteFeed: state.remoteFeed, onboarding: state.onboarding, tab: state.tab
+    }));
+  } catch (e) { /* private mode or quota — the mirror still works in memory */ }
+}
+function load() {
+  let raw = null;
+  try { raw = localStorage.getItem(STORE_KEY); } catch (e) { return; }
+  if (!raw) return;
+  try {
+    const d = JSON.parse(raw);
+    if (d.theme && THEMES[d.theme]) state.theme = d.theme;
+    if (d.profile) { state.profile = d.profile; state.onboarding = false; }
+    state.routine = d.routine || (d.profile ? buildRoutine(d.profile) : null);
+    state.completions = d.completions || {};
+    state.sessions = Array.isArray(d.sessions) ? d.sessions : [];
+    state.remoteFeed = !!d.remoteFeed;
+    if (d.tab) state.tab = d.tab;
+  } catch (e) { /* corrupt payload — start fresh */ }
+}
+
+const theme = () => THEMES[state.theme];
+function currentDate() {
+  const now = new Date();
+  if (state.previewWeekday == null) return now;
+  const d = new Date(now);
+  d.setDate(now.getDate() + (state.previewWeekday - 1 - now.getDay()));
+  return d;
+}
+const dateKey = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+
+function isDone(step, d) { const k = dateKey(d || currentDate()); return !!(state.completions[k] && state.completions[k].includes(step.id)); }
+function toggleStep(step) {
+  const k = dateKey(currentDate());
+  const set = state.completions[k] ? state.completions[k].slice() : [];
+  const i = set.indexOf(step.id);
+  if (i >= 0) set.splice(i, 1); else set.push(step.id);
+  state.completions[k] = set;
+  save();
+}
+function completionFraction(d) {
+  if (!state.routine) return 0;
+  const active = stepsFor(state.routine, d || currentDate());
+  if (!active.length) return 0;
+  return active.filter(s => isDone(s, d)).length / active.length;
+}
+function streak() {
+  if (!state.routine) return 0;
+  let day = new Date(currentDate()); day.setHours(0, 0, 0, 0);
+  let count = 0;
+  if (completionFraction(day) < 0.75) day.setDate(day.getDate() - 1);
+  while (completionFraction(day) >= 0.75 && count < 365) { count++; day.setDate(day.getDate() - 1); }
+  return count;
+}
+const allProducts = () => {
+  const map = new Map();
+  BUNDLED_PRODUCTS.forEach(p => map.set(p.id, Object.assign({}, p, { source: "Curated catalog" })));
+  if (state.remoteFeed) REMOTE_PRODUCTS.forEach(p => map.set(p.id, Object.assign({}, p, { source: "Community feed" })));
+  return Array.from(map.values()).sort((a, b) =>
+    (CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category)) || a.name.localeCompare(b.name));
+};
+const allTips = () => state.remoteFeed ? BUNDLED_TIPS.concat(REMOTE_TIPS) : BUNDLED_TIPS;
+function tipOfTheDay() {
+  const tips = allTips();
+  if (!tips.length) return null;
+  const start = new Date(currentDate().getFullYear(), 0, 0);
+  const day = Math.floor((currentDate() - start) / 86400000);
+  return tips[day % tips.length];
+}
+const sortedSessions = () => state.sessions.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+const latestSession = () => { const s = sortedSessions(); return s.length ? s[s.length - 1] : null; };
+
+/* ============================================================
+   8. RENDER HELPERS
+   ============================================================ */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const el = document.getElementById.bind(document);
+
+function ringSVG(value, color, track) {
+  const r = 42, c = 2 * Math.PI * r, pct = Math.max(0.02, Math.min(1, value / 100));
+  return '<svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="' + r + '" fill="none" stroke="' + track + '" stroke-width="9"/>' +
+    '<circle cx="48" cy="48" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="9" stroke-linecap="round" ' +
+    'stroke-dasharray="' + (c * pct).toFixed(1) + ' ' + c.toFixed(1) + '"/></svg>';
+}
+function ring(value, label) {
+  const t = theme();
+  return '<div class="ring-wrap"><div class="ring">' + ringSVG(value, t.accent, t.surface2) +
+    "<b>" + Math.round(value) + "</b></div><div class=\"ring-label\">" + esc(label) + "</div></div>";
+}
+function trendBadge(trend, up, flat, down) {
+  const t = theme();
+  const map = {
+    improving: { c: t.pos, s: "arrow.up.right", label: up },
+    stable: { c: t.accent2, s: "arrow.right", label: flat },
+    declining: { c: t.caution, s: "arrow.down.right", label: down }
+  }[trend.direction];
+  return '<span class="badge" style="background:' + map.c + '29;color:' + map.c + '">' +
+    ic(map.s) + esc(map.label) + ' <span style="opacity:.8">' +
+    (trend.deltaPercent >= 0 ? "+" : "") + trend.deltaPercent.toFixed(1) + "%</span></span>";
+}
+function disclaimer() {
+  return '<div class="row-top gap8 t-second f-cap2" style="line-height:1.4">' +
+    '<span style="width:14px;flex:0 0 auto">' + ic("info.circle") + "</span>" +
+    "<span>MANE is a grooming companion, not a medical device. Hairline and density estimates are approximate and sensitive to lighting and angle. " +
+    "For medical concerns about hair loss, consult a dermatologist.</span></div>";
+}
+function chipHTML(label, symbol, selected, action, value) {
+  return '<button class="chip" aria-pressed="' + (selected ? "true" : "false") + '" data-act="' + action + '" data-val="' + esc(value) + '">' +
+    (symbol ? ic(symbol) : "") + "<span>" + esc(label) + "</span></button>";
+}
+function sectionHeader(title, sub) {
+  return '<div><h2 class="sec-title">' + esc(title) + "</h2>" + (sub ? '<p class="sec-sub">' + esc(sub) + "</p>" : "") + "</div>";
+}
+const clockLabel = () => {
+  const d = new Date();
+  let h = d.getHours() % 12; if (h === 0) h = 12;
+  return h + ":" + String(d.getMinutes()).padStart(2, "0");
+};
+
+/* ============================================================
+   9. SCREENS
+   ============================================================ */
+function statusBar() {
+  return '<div class="island"></div><div class="status-bar"><span>' + clockLabel() + "</span>" +
+    '<span class="glyphs" style="width:66px">' +
+    '<span style="width:17px">' + ic("signal") + "</span>" +
+    '<span style="width:17px">' + ic("wifi") + "</span>" +
+    '<span style="width:25px">' + ic("battery") + "</span></span></div>";
+}
+
+/* ---------- Onboarding ---------- */
+const OB_LAST_Q = 6;
+function renderOnboarding() {
+  const d = state.draft, s = state.step, t = theme();
+  let head = '<div style="padding:12px 24px 0;display:flex;flex-direction:column;gap:14px">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;height:24px">' +
+    (s > 0 && s < 7 ? '<button class="nav-btn" data-act="ob-back" style="color:var(--text2);padding:0"><span style="width:17px;display:block">' + ic("chevron.left") + "</span></button>" : "<span></span>") +
+    (s >= 1 && s <= OB_LAST_Q ? '<span class="f-cap w-semi t-second">Step ' + s + " of " + OB_LAST_Q + "</span>" : "") +
+    "</div>";
+  if (s >= 1 && s <= OB_LAST_Q) {
+    head += '<div class="progress-track"><div class="progress-fill" style="width:' + (s / OB_LAST_Q * 100) + '%"></div></div>';
+  }
+  head += "</div>";
+
+  let body = "", footer = "";
+  if (s === 0) {
+    body =
+      '<div class="hero" style="height:220px;display:grid;place-items:center;border-radius:28px">' +
+      '<div class="center col gap10" style="align-items:center">' +
+      '<div style="width:84px;height:84px;border-radius:50%;background:rgba(255,255,255,.15);display:grid;place-items:center;font-family:var(--app-round);font-size:44px;font-weight:800">M</div>' +
+      '<div class="round" style="font-size:30px;font-weight:800;letter-spacing:.24em">MANE</div>' +
+      '<div class="f-foot" style="opacity:.85">Engineered hair care for men</div></div></div>' +
+      [["list.clipboard.fill", "A routine built for you", "Answer a few questions and get a weekly plan matched to your hair, scalp and lifestyle."],
+       ["camera.metering.center.weighted", "Hairline scanner", "3–4 photos, analyzed on device, tracked over time — see if your hairline is receding, stable or restoring."],
+       ["sparkles", "Products that fit", "Recommendations scored against your profile, aggregated from multiple catalog sources."],
+       ["lock.fill", "Private by design", "Photos and analysis never leave your phone."]]
+        .map(f => '<div class="row-top gap14"><span class="t-accent" style="width:26px;flex:0 0 auto">' + ic(f[0]) + "</span>" +
+          '<div class="col gap6"><div class="f-head">' + f[1] + '</div><div class="f-sub t-second">' + f[2] + "</div></div></div>").join("");
+    footer = '<button class="btn-primary" data-act="ob-next">Build my routine</button>';
+  } else if (s === 1) {
+    body = sectionHeader("First things first", "What should we call you?") +
+      '<input class="field" data-act="ob-name" placeholder="Your name (optional)" value="' + esc(d.name) + '">' +
+      sectionHeader("Age range", "Hair changes with age — this tunes the plan.") +
+      '<div class="chips">' + AGES.map(a => chipHTML(a, null, d.ageRange === a, "ob-age", a)).join("") + "</div>";
+  } else if (s === 2) {
+    body = sectionHeader("Your hair type", "Pick the closest match when dry.") +
+      '<div class="chips">' + HAIR_TYPES.map(h => chipHTML(h.label, h.symbol, d.hairType === h.id, "ob-type", h.id)).join("") + "</div>" +
+      sectionHeader("Current length") +
+      '<div class="chips">' + HAIR_LENGTHS.map(h => chipHTML(h.label, null, d.hairLength === h.id, "ob-length", h.id)).join("") + "</div>";
+  } else if (s === 3) {
+    body = sectionHeader("How's your scalp?", "The scalp drives wash frequency and product picks.") +
+      '<div class="col gap12">' + SCALPS.map(c =>
+        '<button class="select-card" aria-pressed="' + (d.scalp === c.id) + '" data-act="ob-scalp" data-val="' + c.id + '">' +
+        '<span class="grow col gap6" style="text-align:left"><span class="f-head">' + c.label + '</span><span class="f-sub t-second">' + c.blurb + "</span></span>" +
+        '<span class="mark ' + (d.scalp === c.id ? "t-accent" : "t-second") + '" style="width:22px;flex:0 0 auto">' +
+        ic(d.scalp === c.id ? "checkmark.circle.fill" : "circle") + "</span></button>").join("") + "</div>";
+  } else if (s === 4) {
+    body = sectionHeader("Any concerns?", "Select all that apply — or none.") +
+      '<div class="chips">' + CONCERNS.map(c => chipHTML(c.label, c.symbol, d.concerns.includes(c.id), "ob-concern", c.id)).join("") + "</div>";
+  } else if (s === 5) {
+    const tg = (label, symbol, key) =>
+      '<div class="switch-row"><span class="row gap10 f-sub w-semi"><span class="t-accent" style="width:19px">' + ic(symbol) + "</span>" + label + "</span>" +
+      '<button class="switch" aria-pressed="' + d.lifestyle[key] + '" data-act="ob-life" data-val="' + key + '" aria-label="' + label + '"><span></span></button></div>';
+    body = sectionHeader("Lifestyle", "Sweat, chlorine and heat all change the plan.") +
+      '<div class="col gap12"><div class="f-head">How often do you work out?</div>' +
+      '<div class="chips">' + EXERCISE.map(e => chipHTML(e.label, null, d.lifestyle.exercise === e.id, "ob-ex", e.id)).join("") + "</div></div>" +
+      '<div class="card col">' + tg("Swim regularly (pool)", "figure.pool.swim", "swims") +
+      tg("Hard water at home", "aqi.medium", "hardWater") +
+      tg("Blow-dry or use hot tools", "flame", "heatStyling") +
+      tg("Wear hats most days", "graduationcap", "wearsHats") + "</div>";
+  } else if (s === 6) {
+    body = sectionHeader("Current habits", "No judgment — this is the before picture.") +
+      '<div class="card col gap8"><div class="f-head">You shampoo about ' + d.currentWashesPerWeek + '×/week</div>' +
+      '<input class="slider" type="range" min="1" max="7" step="1" value="' + d.currentWashesPerWeek + '" data-act="ob-washes">' +
+      '<div class="row f-cap t-second" style="justify-content:space-between"><span>1×</span><span>Daily</span></div></div>' +
+      sectionHeader("Main goal", "One priority keeps the plan sharp.") +
+      '<div class="chips">' + GOALS.map(g => chipHTML(g.label, g.symbol, d.goal === g.id, "ob-goal", g.id)).join("") + "</div>";
+    footer = '<button class="btn-primary" data-act="ob-generate">Generate my plan</button>';
+  } else if (s === 7) {
+    const msgs = ["Reading your profile…", "Balancing wash frequency…", "Matching products from all sources…", "Assembling your weekly plan…"];
+    body = '<div class="col gap14 center" style="padding:80px 0;align-items:center">' +
+      '<div class="spinner"></div><div class="f-head" id="build-msg">' + msgs[0] + "</div></div>";
+  } else {
+    const r = buildRoutine(d);
+    const picks = recommend(allProducts(), d, 3);
+    body =
+      '<div class="col gap8"><div class="round" style="font-size:24px;font-weight:700">' + esc(displayName(d)) + ", your plan is ready</div>" +
+      '<div class="f-head t-accent">' + esc(r.headline) + "</div></div>" +
+      '<div class="card col gap10">' + r.rationale.map(line =>
+        '<div class="row-top gap10"><span style="width:19px;flex:0 0 auto;color:' + t.pos + '">' + ic("checkmark.circle.fill") + "</span>" +
+        '<span class="f-sub t-second">' + esc(line) + "</span></div>").join("") + "</div>" +
+      sectionHeader("Your week at a glance") +
+      '<div class="card col gap10">' + r.steps.map(st =>
+        '<div class="row gap12"><span class="t-accent" style="width:22px;flex:0 0 auto">' + ic(st.icon) + "</span>" +
+        '<div class="col gap6 grow"><div class="f-sub w-semi">' + esc(st.title) + "</div>" +
+        '<div class="f-cap t-second">' + (st.timeOfDay === "morning" ? "Morning" : "Evening") + " · " + esc(st.frequencyLabel) + "</div></div></div>").join("") + "</div>" +
+      (picks.length ? sectionHeader("Starter picks", "Matched to your profile — more in the Products tab.") +
+        '<div class="card col gap10">' + picks.map(p =>
+          '<div class="row gap12"><span class="t-accent" style="width:22px;flex:0 0 auto">' + ic(CATEGORY[p.category].symbol) + "</span>" +
+          '<div class="col gap6 grow"><div class="f-sub w-semi">' + esc(p.name) + '</div><div class="f-cap t-second">' + esc(p.brand) + "</div></div>" +
+          '<span class="f-cap w-bold t-second">' + priceLabel(p.priceTier) + "</span></div>").join("") + "</div>" : "") +
+      disclaimer();
+    footer = '<button class="btn-primary" data-act="ob-start">Start my plan</button>';
+  }
+
+  if (!footer && s >= 1 && s <= 5) footer = '<button class="btn-primary" data-act="ob-next">Continue</button>';
+
+  return statusBar() + head +
+    '<div class="scroll" style="padding:24px">' + body + "</div>" +
+    (footer ? '<div style="padding:0 24px 20px">' + footer + "</div>" : "");
+}
+
+/* ---------- Today ---------- */
+function renderToday() {
+  const t = theme(), r = state.routine, p = state.profile, d = currentDate();
+  const frac = completionFraction();
+  const hour = new Date().getHours();
+  const greet = (hour >= 5 && hour < 12) ? "Morning" : (hour < 18 ? "Afternoon" : "Evening");
+  const c = 2 * Math.PI * 33;
+
+  const hero = '<div class="hero"><div class="row gap14">' +
+    '<div class="col gap6 grow"><div class="round" style="font-size:22px;font-weight:700">' + greet + ", " + esc(p ? displayName(p) : "there") + "</div>" +
+    (r ? '<div class="f-cap" style="opacity:.85">' + esc(r.headline) + "</div>" : "") +
+    '<div class="row gap6" style="margin-top:4px"><span style="width:15px;color:#FF9F45">' + ic("flame.fill") + "</span>" +
+    '<span class="f-sub w-bold">' + streak() + "-day streak</span></div></div>" +
+    '<div style="position:relative;width:74px;height:74px;flex:0 0 auto">' +
+    '<svg viewBox="0 0 74 74" style="transform:rotate(-90deg)"><circle cx="37" cy="37" r="33" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="8"/>' +
+    '<circle cx="37" cy="37" r="33" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-dasharray="' +
+    (c * Math.max(0.02, frac)).toFixed(1) + " " + c.toFixed(1) + '"/></svg>' +
+    '<b class="round" style="position:absolute;inset:0;display:grid;place-items:center;font-size:17px;font-weight:800">' + Math.round(frac * 100) + "%</b></div>" +
+    "</div></div>";
+
+  function checklist(time) {
+    const steps = stepsFor(r, d, time);
+    if (!steps.length) return "";
+    return '<div class="card col gap12"><div class="row gap8 round" style="font-size:17px;font-weight:700">' +
+      '<span style="width:19px">' + ic(time === "morning" ? "sun.max.fill" : "moon.stars.fill") + "</span>" +
+      (time === "morning" ? "Morning" : "Evening") + "</div>" +
+      steps.map(st => {
+        const done = isDone(st);
+        return '<div class="col gap8" style="padding:6px 0"><div class="row-top gap12">' +
+          '<button data-act="toggle" data-val="' + st.id + '" style="background:none;border:0;padding:0;width:22px;flex:0 0 auto;color:' + (done ? t.pos : t.text2) + '">' +
+          ic(done ? "checkmark.circle.fill" : "circle") + "</button>" +
+          '<div class="col gap6 grow"><div class="row gap8" style="flex-wrap:wrap">' +
+          '<span class="f-sub w-semi' + (done ? " strike t-second" : "") + '">' + esc(st.title) + "</span>" +
+          '<span class="pill">' + esc(st.frequencyLabel) + "</span></div>" +
+          '<div class="f-cap t-second">' + esc(st.detail) + "</div></div>" +
+          '<button data-act="why" data-val="' + st.id + '" style="background:none;border:0;padding:0;width:16px;flex:0 0 auto;color:' + t.accent2 + '">' +
+          ic("questionmark.circle") + "</button></div>" +
+          (state.expandedWhy === st.id ? '<div class="f-cap" style="background:var(--surface2);border-radius:10px;padding:10px">' + esc(st.why) + "</div>" : "") +
+          "</div>";
+      }).join("") + "</div>";
+  }
+
+  const tip = tipOfTheDay();
+  const tipCard = tip ? '<div class="card col gap8"><div class="row gap6 f-cap w-bold t-accent">' +
+    '<span style="width:14px">' + ic("lightbulb.fill") + "</span>TIP OF THE DAY</div>" +
+    '<div class="f-head">' + esc(tip.title) + '</div><div class="f-sub t-second">' + esc(tip.body) + "</div></div>" : "";
+
+  const last = latestSession();
+  const days = last ? Math.floor((d - new Date(last.date)) / 86400000) : null;
+  const nudge = (!last || days >= 21) ? '<button class="list-card" data-act="tab" data-val="scan">' +
+    '<span class="t-accent" style="width:26px;flex:0 0 auto">' + ic("camera.metering.center.weighted") + "</span>" +
+    '<span class="col gap6 grow" style="text-align:left"><span class="f-head">' + (last ? "Time for a re-scan" : "Baseline scan") + "</span>" +
+    '<span class="f-cap t-second">' + (last ? "It's been " + days + " days — scan again to keep your trend line honest."
+      : "Take your first hairline scan so future changes have something to compare against.") + "</span></span>" +
+    '<span class="t-second" style="width:14px;flex:0 0 auto">' + ic("chevron.right") + "</span></button>" : "";
+
+  return statusBar() +
+    '<div class="nav-bar"><h1>Today</h1></div>' +
+    '<div class="scroll">' + hero + checklist("morning") + checklist("evening") + tipCard + nudge + disclaimer() + "</div>";
+}
+
+/* ---------- Scan hub ---------- */
+function renderScan() {
+  const t = theme(), sessions = sortedSessions();
+  let body;
+
+  if (!sessions.length) {
+    body =
+      '<div class="hero" style="height:170px;display:grid;place-items:center">' +
+      '<div class="center col gap8" style="align-items:center"><span style="width:40px">' + ic("camera.metering.center.weighted") + "</span>" +
+      '<div class="f-head">Track your hairline with photos</div></div></div>' +
+      '<div class="card col gap14">' + [
+        "Take 3–4 photos: front hairline, both temples, and optionally the crown.",
+        "On-device algorithms estimate your forehead-to-face ratio and hair density.",
+        "Repeat every few weeks — MANE compares sessions and tells you if things are receding, stable or restoring."
+      ].map((txt, i) => '<div class="row-top gap12"><span class="round" style="width:26px;height:26px;flex:0 0 auto;border-radius:50%;background:' +
+        t.accent + ';color:#fff;display:grid;place-items:center;font-size:14px;font-weight:800">' + (i + 1) + "</span>" +
+        '<span class="f-sub t-second">' + txt + "</span></div>").join("") + "</div>" +
+      '<button class="btn-primary" data-act="scan-start"><span style="width:19px">' + ic("camera.fill") + "</span>Take baseline scan</button>" +
+      '<div class="f-cap t-second">Tip: same mirror, same light, same distance — every time. Consistency is what makes the trend meaningful.</div>';
+  } else {
+    const latest = sessions[sessions.length - 1];
+    const hl = sessionHairlineScore(latest), dn = sessionDensity(latest);
+    body = '<div class="card col gap14">' + sectionHeader("Latest scan", new Date(latest.date).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })) +
+      '<div class="row" style="justify-content:center;gap:24px">' + (hl != null ? ring(hl, "Hairline index") : "") + (dn != null ? ring(dn, "Density index") : "") + "</div>" +
+      '<div class="f-cap t-second">Confidence ' + Math.round(sessionConfidence(latest) * 100) + "% · higher is better on both indexes</div></div>";
+
+    const trends = computeTrends(sessions);
+    if (trends) {
+      body += sectionHeader("Trend vs baseline");
+      if (trends.hairline) body += '<div class="card col gap8"><div class="row"><span class="f-sub w-bold grow">Hairline</span>' +
+        trendBadge(trends.hairline, "Restoring", "Stable", "Receding") + "</div>" +
+        '<div class="f-cap t-second">' + esc(trends.hairline.message) + "</div></div>";
+      if (trends.density) body += '<div class="card col gap8"><div class="row"><span class="f-sub w-bold grow">Density</span>' +
+        trendBadge(trends.density, "Improving", "Stable", "Thinning") + "</div>" +
+        '<div class="f-cap t-second">' + esc(trends.density.message) + "</div></div>";
+    } else if (sessions.length === 1) {
+      body += '<div class="card f-sub t-second">One more scan and you\'ll get trend verdicts — re-scan in 2–4 weeks.</div>';
+    }
+
+    if (sessions.length >= 2) {
+      const pts = sessions.map(s => ({ date: new Date(s.date), v: state.chartMetric === "hairline" ? sessionHairlineScore(s) : sessionDensity(s) }))
+        .filter(p => p.v != null);
+      body += '<div class="card col gap12">' + sectionHeader("History") +
+        '<div class="seg"><button data-act="chart" data-val="hairline" aria-pressed="' + (state.chartMetric === "hairline") + '">Hairline</button>' +
+        '<button data-act="chart" data-val="density" aria-pressed="' + (state.chartMetric === "density") + '">Density</button></div>' +
+        chartSVG(pts) + "</div>";
+    }
+
+    body += sectionHeader("All scans") + '<div class="col gap10">' + sessions.slice().reverse().map(s => {
+      const parts = [];
+      const h = sessionHairlineScore(s), dd = sessionDensity(s);
+      if (h != null) parts.push("Hairline " + Math.round(h));
+      if (dd != null) parts.push("Density " + Math.round(dd));
+      parts.push(s.metrics.length + " photos");
+      return '<button class="list-card" data-act="scan-detail" data-val="' + s.id + '">' +
+        '<span class="t-accent" style="width:22px;flex:0 0 auto">' + ic("person.crop.square.badge.camera") + "</span>" +
+        '<span class="col gap6 grow" style="text-align:left"><span class="f-sub w-semi">' +
+        new Date(s.date).toLocaleDateString(undefined, { dateStyle: "medium" }) + "</span>" +
+        '<span class="f-cap t-second">' + parts.join(" · ") + "</span></span>" +
+        '<span class="t-second" style="width:14px;flex:0 0 auto">' + ic("chevron.right") + "</span></button>";
+    }).join("") + "</div>";
+  }
+
+  return statusBar() +
+    '<div class="nav-bar"><div class="nav-tools">' +
+    '<button class="nav-btn" data-act="scan-start"><span style="width:19px;display:block">' + ic("plus.circle.fill") + "</span>New Scan</button></div>" +
+    "<h1>Hairline Scan</h1></div>" +
+    '<div class="scroll">' + body + disclaimer() + "</div>";
+}
+
+function chartSVG(points) {
+  const t = theme();
+  if (points.length < 2) return "";
+  const W = 300, H = 190, pad = { l: 26, r: 8, t: 10, b: 22 };
+  const xs = points.map(p => p.date.getTime());
+  const minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs) || minX + 1;
+  const px = i => pad.l + (maxX === minX ? 0.5 : (xs[i] - minX) / (maxX - minX)) * (W - pad.l - pad.r);
+  const py = v => pad.t + (1 - v / 100) * (H - pad.t - pad.b);
+  const path = points.map((p, i) => (i ? "L" : "M") + px(i).toFixed(1) + " " + py(p.v).toFixed(1)).join(" ");
+  const grid = [0, 25, 50, 75, 100].map(v =>
+    '<line x1="' + pad.l + '" x2="' + (W - pad.r) + '" y1="' + py(v).toFixed(1) + '" y2="' + py(v).toFixed(1) +
+    '" stroke="' + t.text2 + '" stroke-opacity=".18" stroke-width="1"/>' +
+    '<text x="' + (pad.l - 6) + '" y="' + (py(v) + 3.5).toFixed(1) + '" fill="' + t.text2 +
+    '" font-size="9" text-anchor="end" font-family="var(--app-sans)">' + v + "</text>").join("");
+  const area = "M" + px(0).toFixed(1) + " " + py(points[0].v).toFixed(1) + " " +
+    points.map((p, i) => "L" + px(i).toFixed(1) + " " + py(p.v).toFixed(1)).join(" ") +
+    " L" + px(points.length - 1).toFixed(1) + " " + (H - pad.b) + " L" + px(0).toFixed(1) + " " + (H - pad.b) + " Z";
+  const dots = points.map((p, i) =>
+    '<circle cx="' + px(i).toFixed(1) + '" cy="' + py(p.v).toFixed(1) + '" r="' + (i === points.length - 1 ? 5 : 3.4) +
+    '" fill="' + (i === points.length - 1 ? t.accent : t.accent2) + '" stroke="' + t.surface + '" stroke-width="1.6"/>').join("");
+  const labels = [0, points.length - 1].map(i =>
+    '<text x="' + px(i).toFixed(1) + '" y="' + (H - 6) + '" fill="' + t.text2 + '" font-size="9" font-family="var(--app-sans)" text-anchor="' +
+    (i === 0 ? "start" : "end") + '">' + points[i].date.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + "</text>").join("");
+  return '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none">' + grid +
+    '<path d="' + area + '" fill="' + t.accent + '" fill-opacity=".12"/>' +
+    '<path d="' + path + '" fill="none" stroke="' + t.accent + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+    dots + labels + "</svg>";
+}
+
+/* ---------- Products ---------- */
+function renderProducts() {
+  const t = theme(), products = allProducts();
+  const picks = recommend(products, state.profile, 6);
+  const showShelf = picks.length && !state.productSearch && !state.productFilter;
+
+  const filtered = products.filter(p => {
+    const okCat = !state.productFilter || p.category === state.productFilter;
+    const q = state.productSearch.toLowerCase();
+    const okQ = !q || p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) ||
+      p.tags.some(tag => tag.toLowerCase().includes(q));
+    return okCat && okQ;
+  });
+  const rating = r => '<span class="row gap6" style="gap:3px"><span style="width:11px;color:' + t.caution + '">' + ic("star.fill") + "</span>" +
+    '<span class="f-cap w-semi">' + r.toFixed(1) + "</span></span>";
+
+  let body = "";
+  if (showShelf) {
+    body += '<div class="col gap12">' + sectionHeader("For you", "Scored against your onboarding profile") +
+      '<div class="shelf">' + picks.map(p =>
+        '<button class="shelf-card" data-act="product" data-val="' + p.id + '">' +
+        '<span class="t-accent" style="width:24px">' + ic(CATEGORY[p.category].symbol) + "</span>" +
+        '<span class="grow"></span><span class="f-sub w-bold" style="line-height:1.25">' + esc(p.name) + "</span>" +
+        '<span class="f-cap t-second">' + esc(p.brand) + "</span>" +
+        '<span class="row gap6">' + rating(p.rating) + '<span class="f-cap w-bold t-second">' + priceLabel(p.priceTier) + "</span></span></button>").join("") + "</div></div>";
+  }
+
+  const sourceCount = state.remoteFeed ? 3 : 2;
+  body += '<div class="col gap12">' + sectionHeader("Catalog", products.length + " products aggregated from " + sourceCount + " sources") +
+    '<div class="chips-scroll">' + chipHTML("All", null, !state.productFilter, "filter", "") +
+    CATEGORY_ORDER.map(c => chipHTML(CATEGORY[c].label, CATEGORY[c].symbol, state.productFilter === c, "filter", c)).join("") + "</div>";
+
+  if (!filtered.length) {
+    body += '<div class="col gap8 center" style="padding:40px 0;align-items:center"><span class="t-second" style="width:26px">' + ic("magnifyingglass") + "</span>" +
+      '<span class="f-sub t-second">No products match</span></div>';
+  } else {
+    body += '<div class="col gap10">' + filtered.map(p =>
+      '<button class="list-card" data-act="product" data-val="' + p.id + '">' +
+      '<span class="thumb">' + ic(CATEGORY[p.category].symbol) + "</span>" +
+      '<span class="col gap6 grow" style="text-align:left"><span class="f-sub w-semi">' + esc(p.name) + "</span>" +
+      '<span class="f-cap t-second">' + esc(p.brand) + " · " + CATEGORY[p.category].label + "</span></span>" +
+      '<span class="col gap6" style="align-items:flex-end">' + rating(p.rating) +
+      '<span class="f-cap w-bold t-second">' + priceLabel(p.priceTier) + "</span></span></button>").join("") + "</div>";
+  }
+  body += "</div>";
+
+  return statusBar() +
+    '<div class="nav-bar"><h1>Products</h1></div>' +
+    '<div style="padding:0 20px 6px"><div class="row gap8 field sunk"><span class="t-second" style="width:17px;flex:0 0 auto">' + ic("magnifyingglass") + "</span>" +
+    '<input data-act="search" placeholder="Search products" value="' + esc(state.productSearch) +
+    '" style="border:0;background:none;color:var(--text);font-size:15px;width:100%;outline:none;font-family:var(--app-sans)"></div></div>' +
+    '<div class="scroll">' + body + "</div>";
+}
+
+function productSheet(id) {
+  const p = allProducts().find(x => x.id === id);
+  if (!p) return "";
+  const t = theme(), reasons = productReasons(p, state.profile);
+  return '<div class="sheet" data-act="close-sheet"><div class="sheet-body" data-stop="1"><div class="sheet-grip"></div>' +
+    '<div class="col gap14"><div class="row gap14"><span class="thumb lg">' + ic(CATEGORY[p.category].symbol) + "</span>" +
+    '<div class="col gap6 grow"><div class="round" style="font-size:20px;font-weight:700">' + esc(p.name) + "</div>" +
+    '<div class="f-sub t-second">' + esc(p.brand) + " · " + CATEGORY[p.category].label + "</div>" +
+    '<div class="row gap8"><span class="row" style="gap:3px"><span style="width:12px;color:' + t.caution + '">' + ic("star.fill") + "</span>" +
+    '<span class="f-cap w-bold">' + p.rating.toFixed(1) + "</span></span>" +
+    '<span class="f-cap w-bold t-second">' + priceLabel(p.priceTier) + "</span></div></div></div>" +
+    '<div class="f-sub t-second">' + esc(p.summary) + "</div>" +
+    (reasons.length ? '<div class="card col gap8"><div class="f-head">Why it fits you</div>' + reasons.map(r =>
+      '<div class="row gap8"><span style="width:17px;flex:0 0 auto;color:' + t.pos + '">' + ic("checkmark.circle.fill") + "</span>" +
+      '<span class="f-sub t-second">' + esc(r) + "</span></div>").join("") + "</div>" : "") +
+    '<div class="col gap8"><div class="f-head">Hero ingredients</div><div class="chips free">' +
+    p.heroIngredients.map(i => '<span class="pill" style="font-size:12px;padding:7px 12px">' + esc(i) + "</span>").join("") + "</div></div>" +
+    '<div class="row gap6 f-cap2 t-second"><span style="width:13px">' + ic("tray.2") + "</span>Source: " + esc(p.source) + "</div>" +
+    "</div></div></div>";
+}
+
+/* ---------- Settings ---------- */
+function renderSettings() {
+  const t = theme(), p = state.profile;
+  const sources = [
+    { name: "Curated catalog", kind: "Bundled", state: "Loaded", count: BUNDLED_PRODUCTS.length },
+    { name: "Grooming tips library", kind: "Bundled", state: "Loaded", count: BUNDLED_TIPS.length },
+    {
+      name: "Community feed", kind: "Remote",
+      state: state.remoteFeed ? "Live — sample feed" : "Not configured — add a URL in Settings",
+      count: state.remoteFeed ? REMOTE_PRODUCTS.length + REMOTE_TIPS.length : 0
+    }
+  ];
+  const profileRow = (k, v) => '<div class="row-top" style="padding:3px 0"><span class="f-sub t-second" style="width:88px;flex:0 0 auto">' + k + "</span>" +
+    '<span class="f-sub w-semi grow">' + esc(v) + "</span></div>";
+
+  let body = sectionHeader("Appearance", "Three looks, all first-class") +
+    '<div class="col gap10">' + Object.keys(THEMES).map(key => {
+      const th = THEMES[key], on = state.theme === key;
+      return '<button class="select-card" aria-pressed="' + on + '" data-act="theme" data-val="' + key + '">' +
+        '<span style="width:52px;height:40px;flex:0 0 auto;border-radius:10px;border:2px solid ' + th.accent +
+        ';background:linear-gradient(135deg,' + th.hero[0] + "," + th.hero[1] + ')"></span>' +
+        '<span class="col gap6 grow" style="text-align:left"><span class="f-head">' + th.name + "</span>" +
+        '<span class="f-cap t-second">' + th.tagline + "</span></span>" +
+        '<span class="mark ' + (on ? "t-accent" : "t-second") + '" style="width:22px;flex:0 0 auto">' +
+        ic(on ? "checkmark.circle.fill" : "circle") + "</span></button>";
+    }).join("") + "</div>";
+
+  if (p) {
+    body += sectionHeader("Your profile") +
+      '<div class="card col">' +
+      profileRow("Name", displayName(p)) + profileRow("Age", p.ageRange) +
+      profileRow("Hair", HAIR_TYPES.find(h => h.id === p.hairType).label + " · " + HAIR_LENGTHS.find(h => h.id === p.hairLength).label) +
+      profileRow("Scalp", SCALPS.find(s => s.id === p.scalp).label) +
+      profileRow("Concerns", p.concerns.length ? p.concerns.map(c => CONCERNS.find(x => x.id === c).label).sort().join(", ") : "None") +
+      profileRow("Goal", GOALS.find(g => g.id === p.goal).label) + "</div>" +
+      '<button class="btn-secondary" data-act="retake"><span style="width:19px">' + ic("arrow.counterclockwise") + "</span>Retake onboarding</button>";
+  }
+
+  body += sectionHeader("Data sources", "The catalog is aggregated from every source below") +
+    '<div class="card col gap8">' + sources.map(s =>
+      '<div class="row gap12" style="padding:4px 0"><span class="t-accent" style="width:22px;flex:0 0 auto">' +
+      ic(s.kind === "Remote" ? "antenna.radiowaves.left.and.right" : "internaldrive") + "</span>" +
+      '<span class="col gap6 grow"><span class="f-sub w-semi">' + s.name + "</span>" +
+      '<span class="f-cap t-second">' + s.state + "</span></span>" +
+      (s.count ? '<span class="pill">' + s.count + "</span>" : "") + "</div>").join("") + "</div>" +
+    '<div class="card col gap10"><div class="f-sub w-semi">Community feed URL</div>' +
+    '<div class="f-cap t-second">In the app this fetches any URL serving catalog JSON. The mirror has no server, so the toggle loads the repo\'s sample feed instead.</div>' +
+    '<div class="field sunk f-cap t-second" style="font-family:var(--mono, monospace)">ios/sample-remote-catalog.json</div>' +
+    '<button class="btn-secondary" data-act="feed"><span style="width:19px">' + ic("arrow.clockwise") + "</span>" +
+    (state.remoteFeed ? "Disconnect feed" : "Load sample feed") + "</button></div>";
+
+  body += sectionHeader("Scan data", state.sessions.length + " saved scan" + (state.sessions.length === 1 ? "" : "s") + " — stored only on this device");
+  if (state.sessions.length) {
+    body += '<button class="btn-primary btn-danger" data-act="wipe-scans"><span style="width:19px">' + ic("trash") + "</span>Delete all scan data</button>";
+  }
+
+  body += sectionHeader("About") +
+    '<div class="card col gap10"><div class="row"><span class="round grow" style="font-size:17px;font-weight:800;letter-spacing:.14em">MANE</span>' +
+    '<span class="f-cap t-second">v1.0</span></div>' +
+    '<div class="f-sub t-second">Engineered hair care for men. Routine, products and hairline tracking — all personalized, all private.</div>' +
+    '<div class="divider"></div>' + disclaimer() + "</div>";
+
+  return statusBar() + '<div class="nav-bar"><h1>Settings</h1></div><div class="scroll">' + body + "</div>";
+}
+
+/* ---------- Scan detail ---------- */
+function renderScanDetail() {
+  const s = state.sessions.find(x => x.id === state.scanDetail);
+  if (!s) { state.scanDetail = null; return renderScan(); }
+  const t = theme();
+  const hl = sessionHairlineScore(s), dn = sessionDensity(s);
+  const metrics = s.metrics.slice().sort((a, b) => angleById(a.angle).order - angleById(b.angle).order);
+  const pill = (k, v) => '<span class="metric-pill col" style="gap:1px"><span class="f-cap2 t-second">' + k + "</span>" +
+    '<span class="f-cap w-bold" style="font-variant-numeric:tabular-nums">' + v + "</span></span>";
+
+  return statusBar() +
+    '<div class="nav-bar compact"><button class="nav-btn" data-act="scan-back"><span style="width:17px;display:block">' + ic("chevron.left") + "</span>Scan</button>" +
+    "<h1>" + new Date(s.date).toLocaleDateString(undefined, { dateStyle: "medium" }) + '</h1><span style="width:52px"></span></div>' +
+    '<div class="scroll">' +
+    '<div class="card row" style="justify-content:center;gap:24px">' + (hl != null ? ring(hl, "Hairline index") : "") + (dn != null ? ring(dn, "Density index") : "") + "</div>" +
+    sectionHeader("Photos") +
+    '<div class="grid2">' + metrics.map(m =>
+      '<div class="col gap6">' + (s.thumbs && s.thumbs[m.angle]
+        ? '<img src="' + s.thumbs[m.angle] + '" alt="' + angleById(m.angle).title + '" style="width:100%;height:150px;object-fit:cover;border-radius:16px">'
+        : '<div style="height:150px;border-radius:16px;background:var(--surface2);display:grid;place-items:center" class="t-second">' + ic("photo") + "</div>") +
+      '<div class="f-cap w-semi t-second">' + angleById(m.angle).title + "</div></div>").join("") + "</div>" +
+    sectionHeader("Metrics") +
+    '<div class="card col gap8">' + metrics.map(m =>
+      '<div class="col gap6" style="padding:6px 0"><div class="f-sub w-bold">' + angleById(m.angle).title + "</div>" +
+      '<div class="row gap8" style="flex-wrap:wrap">' +
+      (m.hairlineRatio != null ? pill("Forehead ratio", m.hairlineRatio.toFixed(3)) : "") +
+      (m.densityScore != null ? pill("Density", Math.round(m.densityScore)) : "") +
+      pill("Confidence", Math.round(m.confidence * 100) + "%") + "</div></div>").join("") + "</div>" +
+    '<button class="btn-primary btn-danger" data-act="delete-scan" data-val="' + s.id + '"><span style="width:19px">' + ic("trash") + "</span>Delete this scan</button>" +
+    disclaimer() + "</div>";
+}
+
+/* ---------- Scan flow (full-screen cover) ---------- */
+function renderScanFlow() {
+  const f = state.flow, t = theme();
+  let body;
+
+  if (f.phase === "capture") {
+    const angle = SCAN_ANGLES[f.index];
+    const shot = f.shots[angle.id];
+    const dots = '<div class="dots">' + SCAN_ANGLES.map(a =>
+      '<i style="background:' + (f.shots[a.id] ? t.pos : (a.id === angle.id ? t.accent : t.surface2)) + '"></i>').join("") + "</div>";
+
+    let frame;
+    if (shot && angle.usesFace) {
+      const box = fitBox(shot.w, shot.h, 291, 300);
+      const g = shot.guide;
+      frame = '<div class="guide-stage" id="guide-stage" style="width:' + box.w + "px;height:" + box.h + 'px;margin:0 auto">' +
+        '<img src="' + shot.url + '" alt="Selected photo">' +
+        '<div class="guide-box" id="guide-box" data-drag="move" style="left:' + (g.x * 100) + "%;top:" + (g.y * 100) + "%;width:" + (g.w * 100) + "%;height:" + (g.h * 100) + '%">' +
+        '<div class="guide-brow" data-drag="brow" style="top:' + (g.brow * 100) + '%"><em>BROW</em></div>' +
+        '<div class="handle" data-drag="resize"></div></div></div>' +
+        '<div class="note-chip">' + ic("exclamationmark.triangle.fill") +
+        "<span><b>Mirror-only step.</b> On iOS, Vision finds the face box and eyebrow line automatically. Browsers can't, so drag the frame over the face and the yellow line onto the eyebrows — the measurement below it is the app's.</span></div>";
+    } else if (shot) {
+      frame = '<div class="shot-frame"><img src="' + shot.url + '" alt="Selected photo"></div>';
+    } else {
+      frame = '<div class="shot-frame"><div class="col gap12 center" style="align-items:center">' +
+        '<span class="t-accent" style="width:52px">' + ic(angle.symbol) + "</span>" +
+        '<span class="f-sub t-second">' + angle.guidance + "</span></div></div>";
+    }
+
+    const nav = [];
+    if (f.index > 0) nav.push('<button class="btn-secondary" data-act="flow-back">Back</button>');
+    if (shot) nav.push('<button class="btn-primary" data-act="flow-next">' + (f.index === SCAN_ANGLES.length - 1 ? "Analyze" : "Next") + "</button>");
+    else if (angle.optional) nav.push('<button class="btn-secondary" data-act="flow-analyze">Skip &amp; analyze</button>');
+
+    body = dots +
+      sectionHeader((f.index + 1) + ". " + angle.title, angle.optional ? "Recommended, but you can skip it" : null) +
+      '<div class="card col gap12">' + frame + "</div>" +
+      '<label class="btn-primary" style="cursor:pointer"><span style="width:19px">' + ic("photo.on.rectangle") + "</span>" +
+      (shot ? "Choose a different photo" : "Choose from library") +
+      '<input type="file" accept="image/*" data-act="file" style="display:none"></label>' +
+      (nav.length ? '<div class="btn-row">' + nav.join("") + "</div>" : "") +
+      '<div class="f-cap2 t-second">Photos are analyzed in this browser tab only — nothing is uploaded.</div>';
+  } else if (f.phase === "analyzing") {
+    body = '<div class="col gap14 center" style="padding:90px 0;align-items:center"><div class="spinner"></div>' +
+      '<div class="f-head">' + esc(f.progress || "Analyzing…") + "</div>" +
+      '<div class="f-cap t-second center">Guide frame → hairline transition → density mapping.<br>All in this tab.</div></div>';
+  } else {
+    const s = f.result, prev = f.previous;
+    const hl = sessionHairlineScore(s), dn = sessionDensity(s);
+    const metrics = s.metrics.slice().sort((a, b) => angleById(a.angle).order - angleById(b.angle).order);
+    const deltaRow = (label, now, then, up, flat, down) => {
+      const delta = (now - then) / Math.max(then, 1) * 100;
+      const dir = delta > 4 ? "improving" : (delta < -4 ? "declining" : "stable");
+      return '<div class="row"><span class="f-sub t-second grow">' + label + "</span>" +
+        trendBadge({ direction: dir, deltaPercent: delta }, up, flat, down) + "</div>";
+    };
+
+    body = sectionHeader("Scan results", "Estimates, not diagnoses — trends across scans are what count.") +
+      '<div class="card row" style="justify-content:center;gap:24px">' +
+      (hl != null ? ring(hl, "Hairline index") : "") + (dn != null ? ring(dn, "Density index") : "") + "</div>";
+
+    if (prev) {
+      const ph = sessionHairlineScore(prev), pd = sessionDensity(prev);
+      body += '<div class="card col gap12"><div class="f-sub w-bold">vs ' +
+        new Date(prev.date).toLocaleDateString(undefined, { dateStyle: "medium" }) + "</div>" +
+        (hl != null && ph != null ? deltaRow("Hairline index", hl, ph, "Restoring", "Stable", "Receding") : "") +
+        (dn != null && pd != null ? deltaRow("Density index", dn, pd, "Improving", "Stable", "Thinning") : "") + "</div>";
+    }
+
+    if (f.overlays && Object.keys(f.overlays).length) {
+      body += sectionHeader("What the algorithm saw", "Face frame, skin-sample band, detected hairline and the density region.") +
+        '<div class="col gap10">' + metrics.filter(m => f.overlays[m.angle]).map(m =>
+          '<div class="col gap6"><img class="overlay-canvas" src="' + f.overlays[m.angle] + '" alt="Analysis overlay for ' + angleById(m.angle).title + '">' +
+          '<div class="f-cap2 t-second">' + angleById(m.angle).title + "</div></div>").join("") + "</div>";
+    }
+
+    body += '<div class="card col gap12"><div class="f-sub w-bold">Per-angle detail</div>' +
+      metrics.map(m => '<div class="row gap8" style="padding:2px 0"><span class="row gap6 f-cap w-semi grow">' +
+        '<span style="width:14px;flex:0 0 auto">' + ic(angleById(m.angle).symbol) + "</span>" + angleById(m.angle).title + "</span>" +
+        (m.hairlineRatio != null ? '<span class="f-cap t-second">HL ' + Math.round(hairlineScoreFromRatio(m.hairlineRatio)) + "</span>" : "") +
+        (m.densityScore != null ? '<span class="f-cap t-second">DN ' + Math.round(m.densityScore) + "</span>" : "") +
+        '<span class="f-cap w-bold" style="color:' + (m.confidence >= 0.5 ? theme().pos : theme().caution) + '">' +
+        Math.round(m.confidence * 100) + "%</span></div>").join("") + "</div>";
+
+    if (sessionConfidence(s) < 0.45) {
+      body += '<div class="card row-top gap8" style="color:' + t.caution + '"><span style="width:17px;flex:0 0 auto">' + ic("exclamationmark.triangle.fill") + "</span>" +
+        '<span class="f-cap">Low confidence — the hairline was hard to detect. Try again with even light, hair pulled back and the frame snug around the face.</span></div>';
+    }
+
+    body += '<div class="col gap10"><button class="btn-primary" data-act="flow-save">Save scan</button>' +
+      '<button class="btn-secondary" data-act="flow-discard">Discard</button></div>' + disclaimer();
+  }
+
+  return '<div class="full-cover">' + statusBar() +
+    '<div class="nav-bar compact"><button class="nav-btn" data-act="flow-cancel"' +
+    (f.phase === "analyzing" ? " disabled style=\"opacity:.4\"" : "") + ">Cancel</button>" +
+    "<h1>New Scan</h1><span style=\"width:52px\"></span></div>" +
+    '<div class="scroll">' + body + "</div></div>";
+}
+
+function fitBox(w, h, maxW, maxH) {
+  const scale = Math.min(maxW / w, maxH / h, 1);
+  return { w: Math.round(w * scale) || maxW, h: Math.round(h * scale) || maxH };
+}
+
+/* ---------- Root render ---------- */
+function render() {
+  const t = theme();
+  const screen = el("screen");
+  screen.style.setProperty("--bg", t.bg);
+  screen.style.setProperty("--surface", t.surface);
+  screen.style.setProperty("--surface2", t.surface2);
+  screen.style.setProperty("--text", t.text);
+  screen.style.setProperty("--text2", t.text2);
+  screen.style.setProperty("--accent", t.accent);
+  screen.style.setProperty("--accent2", t.accent2);
+  screen.style.setProperty("--pos", t.pos);
+  screen.style.setProperty("--caution", t.caution);
+  screen.style.setProperty("--neg", t.neg);
+  screen.style.setProperty("--hero1", t.hero[0]);
+  screen.style.setProperty("--hero2", t.hero[1]);
+  screen.style.setProperty("--card-shadow", t.dark ? "none" : "0 4px 10px rgba(16,24,40,.06)");
+
+  let html;
+  if (state.onboarding) {
+    html = renderOnboarding();
+  } else {
+    if (state.tab === "today") html = renderToday();
+    else if (state.tab === "scan") html = state.scanDetail ? renderScanDetail() : renderScan();
+    else if (state.tab === "products") html = renderProducts();
+    else html = renderSettings();
+
+    html += '<div class="tab-bar">' + [
+      ["today", "Today", "checklist"], ["scan", "Scan", "camera.metering.center.weighted"],
+      ["products", "Products", "sparkles"], ["settings", "Settings", "gearshape.fill"]
+    ].map(x => '<button class="tab" role="tab" aria-selected="' + (state.tab === x[0]) + '" data-act="tab" data-val="' + x[0] + '">' +
+      ic(x[2]) + "<span>" + x[1] + "</span></button>").join("") + "</div>";
+
+    if (state.sheet) html += productSheet(state.sheet);
+    if (state.flow) html += renderScanFlow();
+  }
+  screen.innerHTML = html;
+  if (state.flow && state.flow.phase === "capture") bindGuide();
+  renderShell();
+}
+
+/* ============================================================
+   10. SHELL
+   ============================================================ */
+const SCREEN_LABELS = {
+  onboarding: ["Onboarding", "Views/Onboarding/OnboardingView.swift"],
+  today: ["Today", "Views/Today/TodayView.swift"],
+  scan: ["Hairline Scan", "Views/Scanner/ScanHomeView.swift"],
+  scandetail: ["Scan detail", "Views/Scanner/ScanDetailView.swift"],
+  scanflow: ["New Scan", "Views/Scanner/ScanFlowView.swift"],
+  products: ["Products", "Views/Products/ProductsView.swift"],
+  settings: ["Settings", "Views/Settings/SettingsView.swift"]
+};
+function currentScreenKey() {
+  if (state.onboarding) return "onboarding";
+  if (state.flow) return "scanflow";
+  if (state.tab === "scan" && state.scanDetail) return "scandetail";
+  return state.tab;
+}
+
+function renderShell() {
+  // theme swatches
+  const sw = el("theme-switch");
+  if (!sw.dataset.built) {
+    sw.insertAdjacentHTML("beforeend", Object.keys(THEMES).map(k => {
+      const th = THEMES[k];
+      return '<button class="swatch" data-shell="theme" data-val="' + k + '" aria-pressed="false">' +
+        '<i style="background:linear-gradient(135deg,' + th.hero[0] + "," + th.hero[1] + ')"></i>' + th.name + "</button>";
+    }).join(""));
+    sw.dataset.built = "1";
+  }
+  sw.querySelectorAll("[data-shell='theme']").forEach(b =>
+    b.setAttribute("aria-pressed", b.dataset.val === state.theme ? "true" : "false"));
+
+  // jump buttons
+  const jump = el("jump");
+  if (!jump.dataset.built) {
+    jump.innerHTML = [["today", "Today"], ["scan", "Scan"], ["products", "Products"], ["settings", "Settings"]]
+      .map(x => '<button data-shell="jump" data-val="' + x[0] + '">' + x[1] + "</button>").join("") +
+      '<button data-shell="new-scan" style="grid-column:span 2">Start a new scan →</button>' +
+      '<div style="grid-column:span 2;display:flex;flex-direction:column;gap:6px;margin-top:2px">' +
+      '<span class="eyebrow">Preview weekday</span><div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px" id="days"></div></div>';
+    el("days").innerHTML = ["S", "M", "T", "W", "T", "F", "S"].map((d, i) =>
+      '<button data-shell="day" data-val="' + (i + 1) + '" style="padding:7px 0;text-align:center;font-size:11px">' + d + "</button>").join("") +
+      '<button data-shell="day" data-val="" style="padding:7px 0;text-align:center;font-size:10px">now</button>';
+    jump.dataset.built = "1";
+  }
+  jump.querySelectorAll("[data-shell='jump']").forEach(b =>
+    b.setAttribute("aria-pressed", (!state.onboarding && b.dataset.val === state.tab) ? "true" : "false"));
+  const todayWd = new Date().getDay() + 1;
+  el("days").querySelectorAll("[data-shell='day']").forEach(b => {
+    const v = b.dataset.val ? Number(b.dataset.val) : null;
+    const active = state.previewWeekday == null ? (v === null) : (v === state.previewWeekday);
+    b.setAttribute("aria-pressed", active ? "true" : "false");
+    if (v === todayWd) b.style.textDecoration = "underline";
+  });
+
+  const key = currentScreenKey();
+  el("flow-state").textContent = SCREEN_LABELS[key][0];
+  el("stage-caption").innerHTML = "<span>" + SCREEN_LABELS[key][0] + "</span><code>" + SCREEN_LABELS[key][1] + "</code>" +
+    "<span>" + THEMES[state.theme].name + "</span>";
+  el("feed-btn").textContent = "Community feed: " + (state.remoteFeed ? "on" : "off");
+
+  // readout
+  const p = state.profile, r = state.routine, last = latestSession(), trends = computeTrends(sortedSessions());
+  const row = (k, v, cls) => '<div><span class="k">' + k + '</span><span class="v' + (cls ? " " + cls : "") + '">' + v + "</span></div>";
+  const dash = '<span style="opacity:.6">—</span>';
+  el("readout").innerHTML =
+    row("screen", SCREEN_LABELS[key][0]) +
+    row("theme", THEMES[state.theme].name) +
+    row("profile", p ? esc(displayName(p)) : dash, p ? "on" : "off") +
+    row("wash / week", r ? r.washesPerWeek + "×" : dash) +
+    row("steps today", r ? stepsFor(r, currentDate()).length : dash) +
+    row("today done", r ? Math.round(completionFraction() * 100) + "%" : dash) +
+    row("streak", r ? streak() + "d" : dash) +
+    row("catalog", allProducts().length + " items") +
+    row("scans", state.sessions.length) +
+    row("hairline idx", last && sessionHairlineScore(last) != null ? Math.round(sessionHairlineScore(last)) : dash) +
+    row("density idx", last && sessionDensity(last) != null ? Math.round(sessionDensity(last)) : dash) +
+    row("hairline trend", trends && trends.hairline ? trends.hairline.direction : dash,
+      trends && trends.hairline ? (trends.hairline.direction === "declining" ? "off" : "on") : "") +
+    row("density trend", trends && trends.density ? trends.density.direction : dash,
+      trends && trends.density ? (trends.density.direction === "declining" ? "off" : "on") : "");
+
+  renderGauge();
+}
+
+let deviceScale = 1;
+function fitDevice() {
+  const wrap = el("device-wrap");
+  const availW = wrap.parentElement.clientWidth;
+  const top = wrap.getBoundingClientRect().top + window.scrollY;
+  const availH = window.innerHeight - top - 26;   // leave room for the caption
+  deviceScale = Math.max(0.62, Math.min(1, availW / 393, availH / 852));
+  wrap.style.setProperty("--scale", deviceScale.toFixed(3));
+  renderGauge();
+}
+window.addEventListener("resize", fitDevice);
+
+/* A 0–100 scale that reads against the device: minor ticks every 5, majors
+   every 25, and markers for the latest scan's two indexes. */
+function renderGauge() {
+  const g = el("gauge");
+  const h = Math.max(300, Math.round(852 * deviceScale));
+  const W = 66, pad = 16, axis = 30;   // width leaves room for the marker labels
+  const y = v => pad + (1 - v / 100) * (h - pad * 2);
+  let out = '<line x1="' + axis + '" x2="' + axis + '" y1="' + pad + '" y2="' + (h - pad) +
+    '" stroke="var(--line)" stroke-width="1"/>';
+  for (let v = 0; v <= 100; v += 5) {
+    const major = v % 25 === 0;
+    out += '<line x1="' + (axis - (major ? 9 : 4)) + '" x2="' + axis + '" y1="' + y(v).toFixed(1) +
+      '" y2="' + y(v).toFixed(1) + '" stroke="var(--tick)" stroke-width="1"/>';
+    if (major) out += '<text class="major" x="' + (axis - 13) + '" y="' + (y(v) + 3).toFixed(1) +
+      '" font-size="8" text-anchor="end">' + v + "</text>";
+  }
+
+  const last = latestSession();
+  const marks = [];
+  if (last) {
+    const hl = sessionHairlineScore(last), dn = sessionDensity(last);
+    if (hl != null) marks.push({ v: hl, label: "HL", color: "var(--signal)", fill: true });
+    if (dn != null) marks.push({ v: dn, label: "DN", color: "var(--chalk)", fill: false });
+  }
+  // Walk top-down (highest value first) and push each label below the previous
+  // one only when they would actually overlap.
+  marks.sort((a, b) => b.v - a.v);
+  let lastLabelY = -Infinity;
+  marks.forEach(m => {
+    const my = y(m.v);
+    let labelY = Math.max(my + 3, lastLabelY + 11);
+    lastLabelY = labelY;
+    out += '<line x1="' + axis + '" x2="' + (axis + 7) + '" y1="' + my.toFixed(1) + '" y2="' + my.toFixed(1) +
+      '" stroke="' + m.color + '" stroke-width="1.5"/>' +
+      (m.fill
+        ? '<circle cx="' + axis + '" cy="' + my.toFixed(1) + '" r="3.4" fill="' + m.color + '"/>'
+        : '<rect x="' + (axis - 3) + '" y="' + (my - 3).toFixed(1) + '" width="6" height="6" fill="none" stroke="' + m.color + '" stroke-width="1.5"/>') +
+      '<text x="' + (axis + 9) + '" y="' + labelY.toFixed(1) + '" font-size="8" fill="' + m.color + '">' +
+      m.label + " " + Math.round(m.v) + "</text>";
+  });
+  if (!marks.length) {
+    out += '<text x="' + (axis + 9) + '" y="' + (h / 2) + '" font-size="8" transform="rotate(90 ' +
+      (axis + 9) + " " + (h / 2) + ')" text-anchor="middle">NO SCAN</text>';
+  }
+
+  g.setAttribute("viewBox", "0 0 " + W + " " + h);
+  g.setAttribute("width", W);
+  g.setAttribute("height", h);
+  g.setAttribute("aria-label", marks.length
+    ? "Latest scan indexes: " + marks.map(m => m.label + " " + Math.round(m.v)).join(", ") + " on a 0 to 100 scale"
+    : "Index scale, 0 to 100, no scan recorded yet");
+  g.innerHTML = out;
+}
+
+/* ============================================================
+   11. SCAN FLOW MECHANICS
+   ============================================================ */
+function startFlow() {
+  state.flow = { phase: "capture", index: 0, shots: {}, previous: latestSession(), overlays: {} };
+  state.sheet = null;
+  render();
+}
+
+function readFile(file, done) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      // Downscale the working copy; analysis then runs at ≤640 px like the app.
+      const scale = Math.min(1, 900 / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(img.width * scale));
+      c.height = Math.max(1, Math.round(img.height * scale));
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      done({ url: c.toDataURL("image/jpeg", 0.86), w: c.width, h: c.height });
+    };
+    img.onerror = () => done(null);
+    img.src = reader.result;
+  };
+  reader.onerror = () => done(null);
+  reader.readAsDataURL(file);
+}
+
+function imageDataFrom(url, maxDim, cb) {
+  const img = new Image();
+  img.onload = () => {
+    const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(img.width * scale));
+    c.height = Math.max(1, Math.round(img.height * scale));
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    cb(ctx.getImageData(0, 0, c.width, c.height), c, ctx);
+  };
+  img.onerror = () => cb(null);
+  img.src = url;
+}
+
+function overlayImage(canvas, ctx, dbg, t) {
+  if (!dbg) return null;
+  ctx.lineWidth = Math.max(1.4, canvas.width / 320);
+  if (dbg.face) {
+    ctx.strokeStyle = t.accent;
+    ctx.strokeRect(dbg.face.x, dbg.face.y, dbg.face.w, dbg.face.h);
+  }
+  if (dbg.hl) {
+    const b = dbg.hl.skinBand;
+    ctx.fillStyle = "rgba(255,255,255,.18)";
+    ctx.fillRect(b.x0, b.top, b.x1 - b.x0, b.bottom - b.top);
+    ctx.strokeStyle = t.caution;
+    ctx.beginPath(); ctx.moveTo(b.x0, dbg.hl.browY); ctx.lineTo(b.x1, dbg.hl.browY); ctx.stroke();
+    ctx.fillStyle = t.pos;
+    dbg.hl.points.forEach(pt => ctx.fillRect(pt[0] - 1, pt[1] - 1, 2.5, 2.5));
+    ctx.strokeStyle = t.pos;
+    ctx.beginPath(); ctx.moveTo(b.x0, dbg.hl.hairlineY); ctx.lineTo(b.x1, dbg.hl.hairlineY); ctx.stroke();
+  } else if (dbg.browY != null) {
+    ctx.strokeStyle = t.caution;
+    ctx.beginPath(); ctx.moveTo(0, dbg.browY); ctx.lineTo(canvas.width, dbg.browY); ctx.stroke();
+  }
+  const r = dbg.region;
+  ctx.setLineDash([6, 4]);
+  ctx.strokeStyle = t.accent2;
+  ctx.strokeRect(r.x, r.y, r.w, r.h);
+  ctx.setLineDash([]);
+  return canvas.toDataURL("image/jpeg", 0.85);
+}
+
+function analyzeFlow() {
+  const f = state.flow;
+  const ids = Object.keys(f.shots).sort((a, b) => angleById(a).order - angleById(b).order);
+  if (!ids.length) return;
+  f.phase = "analyzing";
+  f.metrics = [];
+  f.overlays = {};
+  render();
+
+  let i = 0;
+  const next = () => {
+    if (i >= ids.length) {
+      f.result = { id: "s" + Date.now(), date: new Date().toISOString(), metrics: f.metrics, thumbs: f.thumbs || {} };
+      f.phase = "results";
+      render();
+      return;
+    }
+    const id = ids[i], shot = f.shots[id];
+    f.progress = "Analyzing " + angleById(id).title.toLowerCase() + "…";
+    render();
+    imageDataFrom(shot.url, 640, (data, canvas, ctx) => {
+      if (data) {
+        const out = analyzeImageData(data, id, shot.guide);
+        f.metrics.push(out.metric);
+        const ov = overlayImage(canvas, ctx, out.debug, theme());
+        if (ov) f.overlays[id] = ov;
+      }
+      i++;
+      setTimeout(next, 180);
+    });
+  };
+  setTimeout(next, 260);
+}
+
+function saveFlow() {
+  const f = state.flow;
+  // Keep small thumbnails only — localStorage is not a photo store.
+  const ids = Object.keys(f.shots);
+  let pending = ids.length;
+  const thumbs = {};
+  const finish = () => {
+    const session = { id: f.result.id, date: f.result.date, metrics: f.result.metrics, thumbs: thumbs };
+    state.sessions.push(session);
+    state.flow = null;
+    save();
+    render();
+  };
+  if (!pending) return finish();
+  ids.forEach(id => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 200 / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(img.width * scale));
+      c.height = Math.max(1, Math.round(img.height * scale));
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      thumbs[id] = c.toDataURL("image/jpeg", 0.7);
+      if (--pending === 0) finish();
+    };
+    img.onerror = () => { if (--pending === 0) finish(); };
+    img.src = f.shots[id].url;
+  });
+}
+
+/* Guide frame dragging */
+function bindGuide() {
+  const stage = el("guide-stage");
+  if (!stage) return;
+  const box = el("guide-box");
+  let mode = null, start = null;
+
+  stage.addEventListener("pointerdown", e => {
+    const target = e.target.closest("[data-drag]");
+    if (!target) return;
+    mode = target.dataset.drag;
+    const rect = stage.getBoundingClientRect();
+    const g = state.flow.shots[SCAN_ANGLES[state.flow.index].id].guide;
+    start = { x: e.clientX, y: e.clientY, rect: rect, g: Object.assign({}, g) };
+    stage.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  stage.addEventListener("pointermove", e => {
+    if (!mode || !start) return;
+    const g = state.flow.shots[SCAN_ANGLES[state.flow.index].id].guide;
+    const dx = (e.clientX - start.x) / start.rect.width;
+    const dy = (e.clientY - start.y) / start.rect.height;
+    if (mode === "move") {
+      g.x = clamp(start.g.x + dx, 0, 1 - g.w);
+      g.y = clamp(start.g.y + dy, 0, 1 - g.h);
+      box.style.left = (g.x * 100) + "%";
+      box.style.top = (g.y * 100) + "%";
+    } else if (mode === "resize") {
+      g.w = clamp(start.g.w + dx, 0.12, 1 - g.x);
+      g.h = clamp(start.g.h + dy, 0.12, 1 - g.y);
+      box.style.width = (g.w * 100) + "%";
+      box.style.height = (g.h * 100) + "%";
+    } else if (mode === "brow") {
+      g.brow = clamp(start.g.brow + dy / g.h, 0.12, 0.95);
+      box.querySelector(".guide-brow").style.top = (g.brow * 100) + "%";
+    }
+  });
+
+  const end = () => { mode = null; start = null; };
+  stage.addEventListener("pointerup", end);
+  stage.addEventListener("pointercancel", end);
+}
+
+/* ============================================================
+   12. EVENTS
+   ============================================================ */
+el("screen").addEventListener("click", e => {
+  const node = e.target.closest("[data-act]");
+  if (!node) return;
+  const act = node.dataset.act, val = node.dataset.val;
+  const d = state.draft;
+
+  switch (act) {
+    /* onboarding */
+    case "ob-next": state.step++; break;
+    case "ob-back": state.step--; break;
+    case "ob-age": d.ageRange = val; break;
+    case "ob-type": d.hairType = val; break;
+    case "ob-length": d.hairLength = val; break;
+    case "ob-scalp": d.scalp = val; break;
+    case "ob-concern": {
+      const i = d.concerns.indexOf(val);
+      if (i >= 0) d.concerns.splice(i, 1); else d.concerns.push(val);
+      break;
+    }
+    case "ob-ex": d.lifestyle.exercise = val; break;
+    case "ob-life": d.lifestyle[val] = !d.lifestyle[val]; break;
+    case "ob-goal": d.goal = val; break;
+    case "ob-generate":
+      state.step = 7;
+      render();
+      runBuildAnimation();
+      return;
+    case "ob-start":
+      state.profile = JSON.parse(JSON.stringify(d));
+      state.routine = buildRoutine(state.profile);
+      state.onboarding = false;
+      state.tab = "today";
+      save();
+      break;
+
+    /* tabs & navigation */
+    case "tab": state.tab = val; state.scanDetail = null; break;
+    case "toggle": {
+      const step = state.routine.steps.find(s => s.id === val);
+      if (step) toggleStep(step);
+      break;
+    }
+    case "why": state.expandedWhy = state.expandedWhy === val ? null : val; break;
+    case "chart": state.chartMetric = val; break;
+    case "filter": state.productFilter = val || null; break;
+    case "product": state.sheet = val; break;
+    case "close-sheet": if (!e.target.closest("[data-stop]")) state.sheet = null; break;
+    case "theme": state.theme = val; save(); break;
+    case "feed": state.remoteFeed = !state.remoteFeed; save(); break;
+    case "retake":
+      state.draft = defaultProfile();
+      state.onboarding = true;
+      state.step = 0;
+      state.profile = null;
+      state.routine = null;
+      state.completions = {};
+      save();
+      break;
+    case "wipe-scans": state.sessions = []; save(); break;
+
+    /* scans */
+    case "scan-start": startFlow(); return;
+    case "scan-detail": state.scanDetail = val; break;
+    case "scan-back": state.scanDetail = null; break;
+    case "delete-scan":
+      state.sessions = state.sessions.filter(s => s.id !== val);
+      state.scanDetail = null;
+      save();
+      break;
+
+    /* scan flow */
+    case "flow-cancel": case "flow-discard": state.flow = null; break;
+    case "flow-back": state.flow.index = Math.max(0, state.flow.index - 1); break;
+    case "flow-next":
+      if (state.flow.index === SCAN_ANGLES.length - 1) { analyzeFlow(); return; }
+      state.flow.index++;
+      break;
+    case "flow-analyze": analyzeFlow(); return;
+    case "flow-save": saveFlow(); return;
+    default: return;
+  }
+  render();
+});
+
+el("screen").addEventListener("input", e => {
+  const node = e.target.closest("[data-act]");
+  if (!node) return;
+  if (node.dataset.act === "ob-name") { state.draft.name = node.value; renderShell(); }
+  else if (node.dataset.act === "ob-washes") {
+    state.draft.currentWashesPerWeek = Number(node.value);
+    const label = node.parentElement.querySelector(".f-head");
+    if (label) label.textContent = "You shampoo about " + node.value + "×/week";
+  } else if (node.dataset.act === "search") {
+    state.productSearch = node.value;
+    const pos = node.selectionStart;
+    render();
+    const again = el("screen").querySelector("[data-act='search']");
+    if (again) { again.focus(); again.setSelectionRange(pos, pos); }
+  }
+});
+
+el("screen").addEventListener("change", e => {
+  const node = e.target.closest("[data-act='file']");
+  if (!node || !node.files || !node.files[0]) return;
+  const angle = SCAN_ANGLES[state.flow.index];
+  readFile(node.files[0], shot => {
+    if (!shot) return;
+    // Default frame: centered, roughly head-sized, brow at 40% (Vision's own fallback).
+    shot.guide = { x: 0.26, y: 0.18, w: 0.48, h: 0.6, brow: 0.4 };
+    state.flow.shots[angle.id] = shot;
+    render();
+  });
+});
+
+function runBuildAnimation() {
+  const msgs = ["Reading your profile…", "Balancing wash frequency…", "Matching products from all sources…", "Assembling your weekly plan…"];
+  let i = 0;
+  const tick = () => {
+    i++;
+    const node = el("build-msg");
+    if (i < msgs.length) {
+      if (node) node.textContent = msgs[i];
+      setTimeout(tick, 550);
+    } else {
+      state.step = 8;
+      render();
+    }
+  };
+  setTimeout(tick, 550);
+}
+
+/* shell events */
+document.addEventListener("click", e => {
+  const node = e.target.closest("[data-shell]");
+  if (!node) return;
+  const act = node.dataset.shell, val = node.dataset.val;
+  // Jumping past onboarding needs a profile; commit the draft (valid defaults)
+  // through the same engine rather than showing a half-built Today screen.
+  const ensureProfile = () => {
+    if (state.profile) return;
+    state.profile = JSON.parse(JSON.stringify(state.draft));
+    state.routine = buildRoutine(state.profile);
+  };
+
+  if (act === "theme") { state.theme = val; save(); }
+  else if (act === "jump") { ensureProfile(); state.onboarding = false; state.flow = null; state.scanDetail = null; state.tab = val; save(); }
+  else if (act === "new-scan") { ensureProfile(); state.onboarding = false; state.tab = "scan"; save(); startFlow(); return; }
+  else if (act === "day") { state.previewWeekday = val ? Number(val) : null; }
+  else if (act === "restart-onboarding") {
+    state.onboarding = true; state.step = 0; state.draft = defaultProfile();
+    state.profile = null; state.routine = null; state.completions = {}; state.flow = null;
+    save();
+  } else if (act === "demo-profile") {
+    state.draft = {
+      name: "Marco", ageRange: "30–39", hairType: "wavy", hairLength: "medium",
+      scalp: "oily", concerns: ["receding", "thinning"], currentWashesPerWeek: 6, goal: "regrow",
+      lifestyle: { exercise: "daily", swims: false, hardWater: true, heatStyling: false, wearsHats: true }
+    };
+    state.profile = JSON.parse(JSON.stringify(state.draft));
+    state.routine = buildRoutine(state.profile);
+    state.onboarding = false;
+    state.tab = "today";
+    save();
+  } else if (act === "demo-scans") {
+    // Plausible ratios/densities so the trend engine has real input to chew on.
+    const seed = [
+      { days: 96, ratios: [0.331, 0.318, 0.325], density: [55, 52, 50, 63] },
+      { days: 64, ratios: [0.336, 0.322, 0.329], density: [54, 51, 50, 61] },
+      { days: 32, ratios: [0.334, 0.321, 0.327], density: [56, 53, 52, 64] },
+      { days: 3, ratios: [0.329, 0.317, 0.323], density: [58, 55, 54, 67] }
+    ];
+    state.sessions = seed.map((s, i) => ({
+      id: "demo" + i,
+      date: new Date(Date.now() - s.days * 86400000).toISOString(),
+      metrics: [
+        { angle: "front", hairlineRatio: s.ratios[0], densityScore: s.density[0], confidence: 0.74 },
+        { angle: "leftTemple", hairlineRatio: s.ratios[1], densityScore: s.density[1], confidence: 0.66 },
+        { angle: "rightTemple", hairlineRatio: s.ratios[2], densityScore: s.density[2], confidence: 0.68 },
+        { angle: "crown", hairlineRatio: null, densityScore: s.density[3], confidence: 0.7 }
+      ],
+      thumbs: {}
+    }));
+    ensureProfile();
+    state.onboarding = false;
+    state.tab = "scan";
+    state.scanDetail = null;
+    save();
+  } else if (act === "toggle-feed") {
+    state.remoteFeed = !state.remoteFeed;
+    save();
+  } else if (act === "wipe") {
+    try { localStorage.removeItem(STORE_KEY); } catch (err) {}
+    state.theme = "arctic"; state.onboarding = true; state.step = 0; state.draft = defaultProfile();
+    state.profile = null; state.routine = null; state.completions = {}; state.sessions = [];
+    state.remoteFeed = false; state.flow = null; state.sheet = null; state.scanDetail = null;
+    state.previewWeekday = null;
+  }
+  render();
+});
+
+/* ============================================================
+   13. BOOT
+   ============================================================ */
+load();
+render();
+fitDevice();
+setInterval(() => {
+  const bar = document.querySelector(".status-bar span");
+  if (bar) bar.textContent = clockLabel();
+}, 20000);
+</script>
+</body>
+</html>
