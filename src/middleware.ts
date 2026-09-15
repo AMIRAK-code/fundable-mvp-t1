@@ -1,10 +1,23 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isSupabaseConfigured } from '@/lib/supabase/config'
 
 const PROTECTED_PREFIXES = ['/app', '/onboarding']
 const AUTH_ROUTES = ['/login', '/signup']
 
 export async function middleware(request: NextRequest) {
+  // Without credentials there is no session to read. Public routes — the bird
+  // study area and the landing page — still render; protected ones are closed.
+  if (!isSupabaseConfigured()) {
+    const { pathname } = request.nextUrl
+    if (PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
+      const loginUrl = request.nextUrl.clone()
+      loginUrl.pathname = '/login'
+      return NextResponse.redirect(loginUrl)
+    }
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(

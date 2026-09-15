@@ -53,6 +53,10 @@
   --brand-primary: #3b82f6;   /* Electric Blue */
   --brand-success: #10b981;   /* Emerald Green */
 
+  /* Birds area tokens */
+  --bird-primary: #34d399;    /* Kingfisher Teal */
+  --bird-accent: #fbbf24;     /* Cheek Amber */
+
   /* Default to dark — overridden in .dark below */
   --background: oklch(0.08 0.005 264);   /* slate-950 */
   --foreground: oklch(0.985 0 0);

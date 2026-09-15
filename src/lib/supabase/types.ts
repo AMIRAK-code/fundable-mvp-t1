@@ -77,6 +77,25 @@ export interface Message {
   created_at: string
 }
 
+export interface BirdQuestion {
+  id: string
+  author_id: string
+  title: string
+  body: string
+  /** Slug from the study catalogue, when the question is about one species. */
+  species_slug: string | null
+  answer_count: number
+  created_at: string
+}
+
+export interface BirdAnswer {
+  id: string
+  question_id: string
+  author_id: string
+  body: string
+  created_at: string
+}
+
 // Joined shapes used in the UI
 export interface StartupWithFounder extends Startup {
   profiles: Profile
@@ -95,6 +114,14 @@ export interface MessageWithSender extends Message {
   profiles: Profile
 }
 
+export interface BirdQuestionWithAuthor extends BirdQuestion {
+  profiles: Pick<Profile, 'id' | 'full_name' | 'avatar_url'> | null
+}
+
+export interface BirdAnswerWithAuthor extends BirdAnswer {
+  profiles: Pick<Profile, 'id' | 'full_name' | 'avatar_url'> | null
+}
+
 // Supabase Database type (used by createClient generic)
 export type Database = {
   public: {
@@ -106,6 +133,8 @@ export type Database = {
       chat_rooms: { Row: ChatRoom; Insert: Omit<ChatRoom, 'id' | 'created_at'>; Update: never }
       messages: { Row: Message; Insert: Omit<Message, 'id' | 'created_at'>; Update: never }
       investment_offers: { Row: InvestmentOffer; Insert: Omit<InvestmentOffer, 'id' | 'created_at'>; Update: Partial<Omit<InvestmentOffer, 'id' | 'created_at'>> }
+      bird_questions: { Row: BirdQuestion; Insert: Omit<BirdQuestion, 'id' | 'created_at' | 'answer_count'>; Update: Partial<Pick<BirdQuestion, 'title' | 'body' | 'species_slug'>> }
+      bird_answers: { Row: BirdAnswer; Insert: Omit<BirdAnswer, 'id' | 'created_at'>; Update: Partial<Pick<BirdAnswer, 'body'>> }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

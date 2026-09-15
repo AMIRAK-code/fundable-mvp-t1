@@ -23,6 +23,12 @@ export default function HomePage() {
           Sign Up
         </Link>
       </div>
+      <Link
+        href="/birds"
+        className="text-sm text-muted-foreground underline-offset-4 hover:text-[var(--bird-primary)] hover:underline"
+      >
+        Browse the bird guide →
+      </Link>
     </main>
   )
 }
